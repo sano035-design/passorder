@@ -1,0 +1,32 @@
+# Sensitive & Personal Info (Security)
+passorder_app_detail_pages/
+*choikanghoon*
+*.docx
+*.zip
+*.log
+
+# Large Datasets (Reproducible via python generate_data.py)
+data/passorder_event_log_90d.csv
+
+# Secrets, Environment & Credentials
+.env
+.env.*
+*secret*
+*credential*
+*.pem
+*.key
+
+# Python & System Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# IDE & Editor Settings
+.vscode/
+.idea/
+*.swp
+*.swo
