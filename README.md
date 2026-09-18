@@ -10,11 +10,18 @@
 </p>
 
 <p align="center">
+  <a href="https://sano035-design.github.io/passorder/" target="_blank">
+    <img src="https://img.shields.io/badge/🚀_Live_Demo-인터랙티브_대시보드_체험하기_(Click_Here)-FF5C1E?style=for-the-badge&logo=rocket&logoColor=white" alt="Live Demo" height="42" />
+  </a>
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/Python-3.10%2B-blue?logo=python" alt="Python" />
   <img src="https://img.shields.io/badge/Data-pandas%20%7C%20numpy-orange" alt="Data Stack" />
   <img src="https://img.shields.io/badge/Frontend-Vanilla%20HTML5%20%2F%20CSS3-yellow" alt="Frontend" />
   <img src="https://img.shields.io/badge/Visualization-Chart.js%204.4-red" alt="Chart.js" />
   <img src="https://img.shields.io/badge/Validation-MySQL%208.0%20%7C%20DBeaver-informational" alt="SQL Validation" />
+  <img src="https://img.shields.io/badge/Live_Hosted-GitHub_Pages-2ea44f?logo=githubpages" alt="GitHub Pages" />
   <img src="https://img.shields.io/badge/Author-sano035--design-black?logo=github" alt="Author" />
 </p>
 
@@ -149,7 +156,10 @@ To simulate real-world app interactions, realistic event telemetry matching Pass
 ## 6. Interactive Dashboard & UI/UX Design System
 
 <p align="center">
-  <img src="templates/passorder_tone_manner.png" alt="Pass Order Dashboard Preview" width="850" />
+  <a href="https://sano035-design.github.io/passorder/" target="_blank">
+    <img src="templates/passorder_dashboard_preview.png" alt="Pass Order Interactive Dashboard Preview" width="100%" />
+  </a><br>
+  <i>👉 <b>Click the image above or <a href="https://sano035-design.github.io/passorder/" target="_blank">Launch Live Dashboard (GitHub Pages)</a></b> to interactively explore tabs, hover values, and cohort heatmaps in real time!</i>
 </p>
 
 ### 🎨 Design System ([`design.md`](design.md))
@@ -168,6 +178,7 @@ To simulate real-world app interactions, realistic event telemetry matching Pass
 ### 7.1. Directory Structure
 ```
 passorder/
+├── index.html                   # Live Web Endpoint for GitHub Pages (Zero-install launch)
 ├── README.md                    # Main Project Documentation (English + Korean)
 ├── docs/
 │   ├── docs.md                  # Autonomous AI Agent Dashboard Specifications
@@ -180,6 +191,7 @@ passorder/
 │   └── passorder_dashboard.html # Standalone Interactive Dark-Theme Dashboard
 ├── templates/
 │   ├── passorder_logo.png       # Official Brand Identity Asset
+│   ├── passorder_dashboard_preview.png # Real Interactive Dashboard Screenshot
 │   └── passorder_tone_manner.png # Official Web Tone & Manner Reference
 ├── design.md                    # Dark UI/UX Design Tokens & Component Guide
 ├── generate_data.py             # 90-Day A/B Test Telemetry Simulation Pipeline
@@ -362,7 +374,12 @@ GROUP BY ab_test_group;
 
 ## 6. 대시보드 시각화 프리뷰 및 디자인 시스템
 
-> **대시보드 실행 파일**: [`output/passorder_dashboard.html`](output/passorder_dashboard.html) (브라우저에서 더블 클릭 시 즉시 구동)
+<p align="center">
+  <a href="https://sano035-design.github.io/passorder/" target="_blank">
+    <img src="templates/passorder_dashboard_preview.png" alt="패스오더 인터랙티브 대시보드 실제 화면" width="100%" />
+  </a><br>
+  <i>👉 <b>위 이미지를 클릭하거나 <a href="https://sano035-design.github.io/passorder/" target="_blank">[🚀 라이브 대시보드 바로가기 (GitHub Pages)]</a></b>를 누르면 설치 없이 웹 브라우저에서 3대 분석 탭과 차트 호버 효과를 즉시 직접 조작해 보실 수 있습니다!</i>
+</p>
 
 ### 🎨 디자인 시스템 특징 ([`design.md`](design.md) 준수)
 * **Pass Order Dark Theme**: 패스오더 공식 비즈니스 사이트의 톤앤매너를 반영한 깊이 있는 다크 블랙(`--bg-dark-root: #0A0C10`)과 패스오더 시그니처 오렌지(`--po-orange: #FF5C1E`) 컬러 적용.
@@ -380,6 +397,7 @@ GROUP BY ab_test_group;
 ### 7.1. 디렉토리 구조
 ```
 passorder/
+├── index.html                   # GitHub Pages 무료 웹 호스팅 엔드포인트 (원클릭 라이브 실행)
 ├── README.md                    # GitHub 공식 메인 리포트 (English + 한국어)
 ├── docs/
 │   ├── docs.md                  # 대시보드 구축 공식 지침서 및 표준 규격
@@ -392,6 +410,7 @@ passorder/
 │   └── passorder_dashboard.html # 완성된 독립 실행형 인터랙티브 대시보드 HTML
 ├── templates/
 │   ├── passorder_logo.png       # 패스오더 브랜드 로고 에셋
+│   ├── passorder_dashboard_preview.png # 실제 구동 대시보드 풀스크린 캡처
 │   └── passorder_tone_manner.png # 공식 비즈니스 사이트 디자인 레퍼런스
 ├── design.md                    # 다크 테마 UI/UX 디자인 토큰 및 컴포넌트 명세서
 ├── generate_data.py             # 90일 A/B 테스트 가상 로그 생성 파이프라인

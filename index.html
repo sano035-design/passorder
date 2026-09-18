@@ -1,236 +1,4 @@
-"""
-패스오더(Pass Order) 교차 브랜드 통합 적립 A/B 테스트 대시보드 HTML 생성기 (v2 - 패스오더 공식 톤앤매너 다크 테마)
------------------------------------------------------------------------------------------------------------------
-수정 사항 반영:
-1. 상단 왼쪽 로고: 패스오더 공식 로고 폰트 및 컬러 ("패스"(흰색) + "오더"(주황색))
-2. 데이터 수식 및 코드 검증 센터 탭 삭제
-3. 실제 로그 샘플 행 해석 케이스 스터디 삭제
-4. 핵심 KPI 네모 상자: 주황색 배경(Pass Order Orange) + 하얀색 글씨
-5. 상단 오른쪽: 그룹 A(대조군: 단일 매장 스탬프) vs 그룹 B(실험군: 교차 통합 적립) 명확하고 직관적인 카드/배지
-6. 패스오더 공식 톤앤매너(다크 블랙/차콜 테마 + 오렌지 시그니처) 전면 적용
-7. 1가설검증 탭 제일 아래 "왜 90일 테스트에서..." 배너 삭제
-8. 1가설검증 탭 주차별 잔존율 상세 비교 표: 글자 줄바꿈 없이(white-space: nowrap) 깔끔하게 정리
-9. 14단계 행동 퍼널 탭: 핵심 구간별 전환율을 텍스트 대신 '수치가 상단에 표시되는 세로 막대 그래프'로 시각화
-"""
-
-import os
-import sys
-import json
-import pandas as pd
-import numpy as np
-
-# 콘솔 UTF-8 설정
-if sys.stdout.encoding != 'utf-8':
-    sys.stdout.reconfigure(encoding='utf-8')
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_FILE = os.path.join(BASE_DIR, "data", "passorder_event_log_90d.csv")
-if not os.path.exists(DATA_FILE):
-    DATA_FILE = os.path.join(BASE_DIR, "..", "passorder_event_log_90d.csv")
-OUTPUT_DIR = os.path.join(BASE_DIR, "output")
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-OUTPUT_HTML = os.path.join(OUTPUT_DIR, "payorder_dashborad.html")
-
-print(f"[1/4] 데이터 로딩 및 분석 중: {DATA_FILE}...")
-df = pd.read_csv(DATA_FILE)
-
-df['event_dt'] = pd.to_datetime(df['event_time'])
-df['date_str'] = df['event_dt'].dt.strftime('%Y-%m-%d')
-total_rows = len(df)
-
-# -------------------------------------------------------------
-# 1. 5대 핵심 KPI 집계
-# -------------------------------------------------------------
-users_per_grp = df.groupby('ab_test_group')['user_id'].nunique().to_dict()
-total_users_a = users_per_grp.get('Group A (Control)', 1250)
-total_users_b = users_per_grp.get('Group B (Treatment)', 1250)
-
-# DAU 집계 (일자별 고유 유저 수)
-daily_dau = df.groupby(['ab_test_group', 'date_str'])['user_id'].nunique().reset_index()
-avg_dau_a = float(daily_dau[daily_dau['ab_test_group'] == 'Group A (Control)']['user_id'].mean())
-avg_dau_b = float(daily_dau[daily_dau['ab_test_group'] == 'Group B (Treatment)']['user_id'].mean())
-
-# 세션 집계
-user_sess = df.groupby(['ab_test_group', 'user_id'])['session_id'].nunique().reset_index()
-avg_sess_a = float(user_sess[user_sess['ab_test_group'] == 'Group A (Control)']['session_id'].mean())
-avg_sess_b = float(user_sess[user_sess['ab_test_group'] == 'Group B (Treatment)']['session_id'].mean())
-
-# 주문 집계 (purchase)
-purchase_df = df[df['event_name'] == 'purchase']
-orders_a = int(len(purchase_df[purchase_df['ab_test_group'] == 'Group A (Control)']))
-orders_b = int(len(purchase_df[purchase_df['ab_test_group'] == 'Group B (Treatment)']))
-orders_per_user_a = orders_a / total_users_a
-orders_per_user_b = orders_b / total_users_b
-
-# 교차 주문율
-cross_orders_a = int(purchase_df[purchase_df['ab_test_group'] == 'Group A (Control)']['is_cross_brand_order'].sum())
-cross_orders_b = int(purchase_df[purchase_df['ab_test_group'] == 'Group B (Treatment)']['is_cross_brand_order'].sum())
-cross_rate_a = (cross_orders_a / orders_a) * 100 if orders_a > 0 else 0
-cross_rate_b = (cross_orders_b / orders_b) * 100 if orders_b > 0 else 0
-
-# 최종 결제 전환율 (choose_payment_methods -> purchase)
-cpm_a = int(len(df[(df['ab_test_group'] == 'Group A (Control)') & (df['event_name'] == 'choose_payment_methods')]))
-cpm_b = int(len(df[(df['ab_test_group'] == 'Group B (Treatment)') & (df['event_name'] == 'choose_payment_methods')]))
-cvr_a = (orders_a / cpm_a) * 100 if cpm_a > 0 else 0
-cvr_b = (orders_b / cpm_b) * 100 if cpm_b > 0 else 0
-
-# -------------------------------------------------------------
-# 2. 일별 시계열 데이터 (DAU 90일)
-# -------------------------------------------------------------
-dates_sorted = sorted(daily_dau['date_str'].unique())
-dau_ts_a = []
-dau_ts_b = []
-for d in dates_sorted:
-    val_a = daily_dau[(daily_dau['ab_test_group'] == 'Group A (Control)') & (daily_dau['date_str'] == d)]
-    val_b = daily_dau[(daily_dau['ab_test_group'] == 'Group B (Treatment)') & (daily_dau['date_str'] == d)]
-    dau_ts_a.append(int(val_a['user_id'].values[0]) if len(val_a) > 0 else 0)
-    dau_ts_b.append(int(val_b['user_id'].values[0]) if len(val_b) > 0 else 0)
-
-# -------------------------------------------------------------
-# 3. 주차별 코호트 잔존율 곡선 (Week 0 ~ Week 12)
-# -------------------------------------------------------------
-user_first_dt = df.groupby('user_id')['event_dt'].min().dt.floor('D')
-df['signup_date'] = df['user_id'].map(user_first_dt)
-df['day_diff'] = (df['event_dt'].dt.floor('D') - df['signup_date']).dt.days
-
-weeks_list = list(range(0, 13))
-retention_curve_a = []
-retention_curve_b = []
-
-for w in weeks_list:
-    w_start = w * 7
-    w_end = min(89, w * 7 + 6)
-    if w == 0:
-        retention_curve_a.append(100.0)
-        retention_curve_b.append(100.0)
-    else:
-        w_df = df[(df['day_diff'] >= w_start) & (df['day_diff'] <= w_end)]
-        users_a = w_df[w_df['ab_test_group'] == 'Group A (Control)']['user_id'].nunique()
-        users_b = w_df[w_df['ab_test_group'] == 'Group B (Treatment)']['user_id'].nunique()
-        retention_curve_a.append(round((users_a / total_users_a) * 100, 1))
-        retention_curve_b.append(round((users_b / total_users_b) * 100, 1))
-
-# -------------------------------------------------------------
-# 4. 14단계 퍼널 전이 데이터 & 핵심 구간별 전환율
-# -------------------------------------------------------------
-FUNNEL_STEPS = [
-    "app_open",
-    "map_page (main)",
-    "Click_cafe_location",
-    "Search_function",
-    "Click_cafe",
-    "Click_To_go_menu",
-    "Click_Here_menu",
-    "Touch_categories",
-    "click_Menu",
-    "add_to_cart",
-    "choose_pick_up_time",
-    "input_order_request",
-    "choose_payment_methods",
-    "purchase"
-]
-
-funnel_counts_a = []
-funnel_counts_b = []
-for step in FUNNEL_STEPS:
-    cnt_a = int(len(df[(df['ab_test_group'] == 'Group A (Control)') & (df['event_name'] == step)]))
-    cnt_b = int(len(df[(df['ab_test_group'] == 'Group B (Treatment)') & (df['event_name'] == step)]))
-    funnel_counts_a.append(cnt_a)
-    funnel_counts_b.append(cnt_b)
-
-# 핵심 4대 구간별 전환율 산출
-# 1) 매장 ➔ 장바구니 (Click_cafe -> add_to_cart)
-cafe_a = len(df[(df['ab_test_group'] == 'Group A (Control)') & (df['event_name'] == 'Click_cafe')])
-cafe_b = len(df[(df['ab_test_group'] == 'Group B (Treatment)') & (df['event_name'] == 'Click_cafe')])
-cart_a = len(df[(df['ab_test_group'] == 'Group A (Control)') & (df['event_name'] == 'add_to_cart')])
-cart_b = len(df[(df['ab_test_group'] == 'Group B (Treatment)') & (df['event_name'] == 'add_to_cart')])
-
-stage1_a = round((cart_a / cafe_a) * 100, 1)
-stage1_b = round((cart_b / cafe_b) * 100, 1)
-
-# 2) 장바구니 ➔ 결제화면 (add_to_cart -> choose_payment_methods)
-stage2_a = round((cpm_a / cart_a) * 100, 1)
-stage2_b = round((cpm_b / cart_b) * 100, 1)
-
-# 3) 결제화면 ➔ 구매완료 (choose_payment_methods -> purchase)
-stage3_a = round((orders_a / cpm_a) * 100, 1)
-stage3_b = round((orders_b / cpm_b) * 100, 1)
-
-# 4) 전체 앱오픈 ➔ 구매완료 (app_open -> purchase)
-open_a = len(df[(df['ab_test_group'] == 'Group A (Control)') & (df['event_name'] == 'app_open')])
-open_b = len(df[(df['ab_test_group'] == 'Group B (Treatment)') & (df['event_name'] == 'app_open')])
-stage4_a = round((orders_a / open_a) * 100, 1)
-stage4_b = round((orders_b / open_b) * 100, 1)
-
-stage_labels = ["1. 매장선택 ➔ 장바구니", "2. 장바구니 ➔ 결제확인", "3. 결제확인 ➔ 최종구매 ★", "4. 전체 퍼널 (오픈➔구매)"]
-stage_rates_a = [stage1_a, stage2_a, stage3_a, stage4_a]
-stage_rates_b = [stage1_b, stage2_b, stage3_b, stage4_b]
-
-# -------------------------------------------------------------
-# 5. 브랜드별 주문 분포 & 포인트 순환 지표
-# -------------------------------------------------------------
-brand_counts_a = purchase_df[purchase_df['ab_test_group'] == 'Group A (Control)']['cafe_brand'].value_counts().to_dict()
-brand_counts_b = purchase_df[purchase_df['ab_test_group'] == 'Group B (Treatment)']['cafe_brand'].value_counts().to_dict()
-
-all_brands = ["메가커피", "컴포즈커피", "빽다방", "텐퍼센트커피", "매머드커피", "개인스페셜티카페"]
-brand_data_a = [int(brand_counts_a.get(b, 0)) for b in all_brands]
-brand_data_b = [int(brand_counts_b.get(b, 0)) for b in all_brands]
-
-pts_earned_total = int(purchase_df[purchase_df['ab_test_group'] == 'Group B (Treatment)']['earned_reward_point'].sum())
-pts_used_total = int(purchase_df[purchase_df['ab_test_group'] == 'Group B (Treatment)']['used_reward_point'].sum())
-pts_used_orders_cnt = int(len(purchase_df[(purchase_df['ab_test_group'] == 'Group B (Treatment)') & (purchase_df['used_reward_point'] > 0)]))
-pts_used_ratio = round((pts_used_orders_cnt / orders_b) * 100, 1)
-
-# JSON 패키징
-data_payload = {
-    "kpi": {
-        "avg_dau_a": round(avg_dau_a, 1),
-        "avg_dau_b": round(avg_dau_b, 1),
-        "dau_lift": round(((avg_dau_b / avg_dau_a) - 1) * 100, 1),
-        "avg_sess_a": round(avg_sess_a, 1),
-        "avg_sess_b": round(avg_sess_b, 1),
-        "sess_lift": round(((avg_sess_b / avg_sess_a) - 1) * 100, 1),
-        "orders_per_user_a": round(orders_per_user_a, 1),
-        "orders_per_user_b": round(orders_per_user_b, 1),
-        "orders_lift": round(((orders_per_user_b / orders_per_user_a) - 1) * 100, 1),
-        "cross_rate_a": round(cross_rate_a, 1),
-        "cross_rate_b": round(cross_rate_b, 1),
-        "cross_diff": round(cross_rate_b - cross_rate_a, 1),
-        "cvr_a": round(cvr_a, 1),
-        "cvr_b": round(cvr_b, 1),
-        "cvr_diff": round(cvr_b - cvr_a, 1),
-        "orders_a": orders_a,
-        "orders_b": orders_b
-    },
-    "chart_dates": dates_sorted,
-    "dau_ts_a": dau_ts_a,
-    "dau_ts_b": dau_ts_b,
-    "weeks": [f"W{w}" for w in weeks_list],
-    "retention_a": retention_curve_a,
-    "retention_b": retention_curve_b,
-    "funnel_steps": FUNNEL_STEPS,
-    "funnel_a": funnel_counts_a,
-    "funnel_b": funnel_counts_b,
-    "stage_labels": stage_labels,
-    "stage_rates_a": stage_rates_a,
-    "stage_rates_b": stage_rates_b,
-    "brands": all_brands,
-    "brand_orders_a": brand_data_a,
-    "brand_orders_b": brand_data_b,
-    "points": {
-        "earned_total": pts_earned_total,
-        "used_total": pts_used_total,
-        "used_orders_cnt": pts_used_orders_cnt,
-        "used_ratio": pts_used_ratio
-    }
-}
-
-data_json_str = json.dumps(data_payload, ensure_ascii=False)
-
-# -------------------------------------------------------------
-# 6. 패스오더 공식 톤앤매너 다크 테마 HTML 작성
-# -------------------------------------------------------------
-html_template = f'''<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
@@ -247,7 +15,7 @@ html_template = f'''<!DOCTYPE html>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    :root {{
+    :root {
       --po-orange: #FF5C1E;
       --po-orange-hover: #E84D12;
       --po-orange-gradient: linear-gradient(135deg, #FF6525 0%, #FF4500 100%);
@@ -266,30 +34,30 @@ html_template = f'''<!DOCTYPE html>
       --radius-lg: 14px;
       --radius-md: 10px;
       --shadow-dark: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
-    }}
+    }
 
-    * {{
+    * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
       font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       -webkit-font-smoothing: antialiased;
-    }}
+    }
 
-    body {{
+    body {
       background-color: var(--bg-dark-root);
       color: var(--text-white);
       min-height: 100vh;
       padding: 24px 32px 60px;
-    }}
+    }
 
-    .container {{
+    .container {
       max-width: 1400px;
       margin: 0 auto;
-    }}
+    }
 
     /* 1. Header Bar with Authentic Pass Order Logo */
-    .top-header {{
+    .top-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -299,16 +67,16 @@ html_template = f'''<!DOCTYPE html>
       box-shadow: var(--shadow-dark);
       margin-bottom: 24px;
       border: 1px solid var(--border-dark);
-    }}
+    }
 
-    .header-brand-wrap {{
+    .header-brand-wrap {
       display: flex;
       align-items: center;
       gap: 20px;
-    }}
+    }
 
     /* Official Pass Order Logo Style */
-    .po-official-logo {{
+    .po-official-logo {
       display: inline-flex;
       align-items: center;
       font-family: "Pretendard", sans-serif;
@@ -322,18 +90,18 @@ html_template = f'''<!DOCTYPE html>
       border-radius: 12px;
       border: 1px solid #222636;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-    }}
+    }
 
-    .po-logo-pass {{
+    .po-logo-pass {
       color: #FFFFFF;
       margin-right: 2px;
-    }}
+    }
 
-    .po-logo-order {{
+    .po-logo-order {
       color: var(--po-orange);
-    }}
+    }
 
-    .header-text-block h1 {{
+    .header-text-block h1 {
       font-size: 21px;
       font-weight: 800;
       color: var(--text-white);
@@ -341,22 +109,22 @@ html_template = f'''<!DOCTYPE html>
       display: flex;
       align-items: center;
       gap: 10px;
-    }}
+    }
 
-    .header-text-block p {{
+    .header-text-block p {
       font-size: 13px;
       color: var(--text-gray-muted);
       margin-top: 5px;
-    }}
+    }
 
     /* Top Right: Distinct A/B Comparison Cards */
-    .header-groups-wrap {{
+    .header-groups-wrap {
       display: flex;
       align-items: center;
       gap: 12px;
-    }}
+    }
 
-    .group-mini-card {{
+    .group-mini-card {
       display: flex;
       align-items: center;
       gap: 12px;
@@ -364,14 +132,14 @@ html_template = f'''<!DOCTYPE html>
       border-radius: 12px;
       background: #181B26;
       border: 1px solid #2B2F42;
-    }}
+    }
 
-    .group-mini-card.group-b {{
+    .group-mini-card.group-b {
       background: rgba(255, 92, 30, 0.1);
       border: 1px solid rgba(255, 92, 30, 0.4);
-    }}
+    }
 
-    .group-icon-badge {{
+    .group-icon-badge {
       width: 36px;
       height: 36px;
       border-radius: 9px;
@@ -380,50 +148,50 @@ html_template = f'''<!DOCTYPE html>
       justify-content: center;
       font-size: 17px;
       flex-shrink: 0;
-    }}
+    }
 
-    .icon-a {{
+    .icon-a {
       background: #2A2E40;
       color: #94A3B8;
-    }}
+    }
 
-    .icon-b {{
+    .icon-b {
       background: var(--po-orange);
       color: #FFFFFF;
       box-shadow: 0 4px 12px rgba(255, 92, 30, 0.4);
-    }}
+    }
 
-    .group-mini-info {{
+    .group-mini-info {
       display: flex;
       flex-direction: column;
-    }}
+    }
 
-    .group-mini-title {{
+    .group-mini-title {
       font-size: 13px;
       font-weight: 800;
       color: var(--text-white);
-    }}
+    }
 
-    .group-mini-desc {{
+    .group-mini-desc {
       font-size: 11px;
       color: var(--text-gray-muted);
       margin-top: 2px;
-    }}
+    }
 
-    .group-b .group-mini-desc {{
+    .group-b .group-mini-desc {
       color: #FFA585;
       font-weight: 600;
-    }}
+    }
 
     /* 2. Key KPI Scorecards: ORANGE BACKGROUND + WHITE TEXT */
-    .kpi-grid {{
+    .kpi-grid {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
       gap: 16px;
       margin-bottom: 24px;
-    }}
+    }
 
-    .kpi-orange-card {{
+    .kpi-orange-card {
       background: var(--po-orange-gradient);
       border-radius: var(--radius-lg);
       padding: 22px 20px;
@@ -433,14 +201,14 @@ html_template = f'''<!DOCTYPE html>
       transition: transform 0.2s ease, box-shadow 0.2s ease;
       position: relative;
       overflow: hidden;
-    }}
+    }
 
-    .kpi-orange-card:hover {{
+    .kpi-orange-card:hover {
       transform: translateY(-4px);
       box-shadow: 0 16px 28px -6px rgba(255, 69, 0, 0.45);
-    }}
+    }
 
-    .kpi-orange-card::after {{
+    .kpi-orange-card::after {
       content: '';
       position: absolute;
       top: -30px;
@@ -450,9 +218,9 @@ html_template = f'''<!DOCTYPE html>
       background: rgba(255, 255, 255, 0.08);
       border-radius: 50%;
       pointer-events: none;
-    }}
+    }
 
-    .kpi-title {{
+    .kpi-title {
       font-size: 13px;
       font-weight: 700;
       color: rgba(255, 255, 255, 0.92);
@@ -460,9 +228,9 @@ html_template = f'''<!DOCTYPE html>
       display: flex;
       align-items: center;
       gap: 6px;
-    }}
+    }
 
-    .kpi-main-val {{
+    .kpi-main-val {
       font-size: 28px;
       font-weight: 900;
       font-family: 'Outfit', sans-serif;
@@ -471,15 +239,15 @@ html_template = f'''<!DOCTYPE html>
       align-items: baseline;
       gap: 4px;
       letter-spacing: -0.5px;
-    }}
+    }
 
-    .kpi-unit {{
+    .kpi-unit {
       font-size: 14px;
       font-weight: 700;
       color: rgba(255, 255, 255, 0.85);
-    }}
+    }
 
-    .kpi-comparison {{
+    .kpi-comparison {
       margin-top: 14px;
       padding-top: 12px;
       border-top: 1px solid rgba(255, 255, 255, 0.22);
@@ -487,14 +255,14 @@ html_template = f'''<!DOCTYPE html>
       justify-content: space-between;
       align-items: center;
       font-size: 12px;
-    }}
+    }
 
-    .kpi-control-text {{
+    .kpi-control-text {
       color: rgba(255, 255, 255, 0.88);
       font-weight: 600;
-    }}
+    }
 
-    .kpi-lift-pill {{
+    .kpi-lift-pill {
       background: #FFFFFF;
       color: #E84D12;
       font-weight: 900;
@@ -502,10 +270,10 @@ html_template = f'''<!DOCTYPE html>
       padding: 3px 8px;
       border-radius: 6px;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-    }}
+    }
 
     /* 3. Navigation Tabs (Clean 3 Tabs) */
-    .tabs-nav {{
+    .tabs-nav {
       display: flex;
       gap: 12px;
       background: var(--bg-header);
@@ -514,9 +282,9 @@ html_template = f'''<!DOCTYPE html>
       border: 1px solid var(--border-dark);
       margin-bottom: 24px;
       box-shadow: var(--shadow-dark);
-    }}
+    }
 
-    .tab-btn {{
+    .tab-btn {
       flex: 1;
       padding: 13px 20px;
       border: none;
@@ -531,92 +299,92 @@ html_template = f'''<!DOCTYPE html>
       align-items: center;
       justify-content: center;
       gap: 8px;
-    }}
+    }
 
-    .tab-btn:hover {{
+    .tab-btn:hover {
       background: #1D212F;
       color: var(--text-white);
-    }}
+    }
 
-    .tab-btn.active {{
+    .tab-btn.active {
       background: var(--po-orange);
       color: #FFFFFF;
       box-shadow: 0 4px 14px rgba(255, 92, 30, 0.35);
-    }}
+    }
 
     /* Tab Panels */
-    .tab-panel {{
+    .tab-panel {
       display: none;
-    }}
+    }
 
-    .tab-panel.active {{
+    .tab-panel.active {
       display: block;
       animation: fadeIn 0.25s ease;
-    }}
+    }
 
-    @keyframes fadeIn {{
-      from {{ opacity: 0; transform: translateY(6px); }}
-      to {{ opacity: 1; transform: translateY(0); }}
-    }}
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
     /* Card Panels in Dark Theme */
-    .dashboard-grid-2 {{
+    .dashboard-grid-2 {
       display: grid;
       grid-template-columns: 1.35fr 1fr;
       gap: 24px;
       margin-bottom: 24px;
-    }}
+    }
 
-    .dashboard-grid-equal {{
+    .dashboard-grid-equal {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 24px;
       margin-bottom: 24px;
-    }}
+    }
 
-    .dark-card-panel {{
+    .dark-card-panel {
       background: var(--bg-card);
       border-radius: var(--radius-xl);
       padding: 24px 28px;
       border: 1px solid var(--border-dark);
       box-shadow: var(--shadow-dark);
-    }}
+    }
 
-    .panel-header {{
+    .panel-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 20px;
-    }}
+    }
 
-    .panel-title-wrap h3 {{
+    .panel-title-wrap h3 {
       font-size: 17px;
       font-weight: 800;
       color: var(--text-white);
       letter-spacing: -0.3px;
-    }}
+    }
 
-    .panel-title-wrap p {{
+    .panel-title-wrap p {
       font-size: 13px;
       color: var(--text-gray-muted);
       margin-top: 4px;
-    }}
+    }
 
-    .chart-container {{
+    .chart-container {
       position: relative;
       width: 100%;
       height: 330px;
-    }}
+    }
 
     /* Strict No-Wrap Clean Table for Retention Heatmap */
-    .retention-clean-table {{
+    .retention-clean-table {
       width: 100%;
       border-collapse: collapse;
       font-size: 13px;
       white-space: nowrap; /* 글자 줄바꿈 원천 방지 */
-    }}
+    }
 
-    .retention-clean-table th {{
+    .retention-clean-table th {
       background: #11141D;
       padding: 12px 14px;
       font-weight: 700;
@@ -624,49 +392,49 @@ html_template = f'''<!DOCTYPE html>
       text-align: center;
       border-bottom: 1px solid var(--border-dark);
       white-space: nowrap;
-    }}
+    }
 
-    .retention-clean-table td {{
+    .retention-clean-table td {
       padding: 13px 14px;
       border-bottom: 1px solid #1E2230;
       color: var(--text-gray-light);
       text-align: center;
       white-space: nowrap;
-    }}
+    }
 
-    .retention-clean-table tr:hover td {{
+    .retention-clean-table tr:hover td {
       background: #1F2333;
-    }}
+    }
 
-    .retention-clean-table td.highlight-b {{
+    .retention-clean-table td.highlight-b {
       color: #FFA585;
       font-weight: 800;
       background: rgba(255, 92, 30, 0.07);
-    }}
+    }
 
-    .lift-tag-badge {{
+    .lift-tag-badge {
       display: inline-block;
       font-size: 11px;
       font-weight: 800;
       padding: 3px 8px;
       border-radius: 6px;
       white-space: nowrap;
-    }}
+    }
 
-    .lift-tag-badge.green {{
+    .lift-tag-badge.green {
       background: rgba(16, 185, 129, 0.15);
       color: #34D399;
       border: 1px solid rgba(16, 185, 129, 0.3);
-    }}
+    }
 
-    .lift-tag-badge.orange {{
+    .lift-tag-badge.orange {
       background: rgba(255, 92, 30, 0.2);
       color: #FF8554;
       border: 1px solid rgba(255, 92, 30, 0.4);
-    }}
+    }
 
     /* Period Memo Box next to Chart Title */
-    .period-memo-box {{
+    .period-memo-box {
       display: inline-flex;
       align-items: center;
       gap: 5px;
@@ -679,33 +447,33 @@ html_template = f'''<!DOCTYPE html>
       border-radius: 6px;
       letter-spacing: -0.2px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    }}
+    }
 
     /* Responsive */
-    @media (max-width: 1200px) {{
-      .kpi-grid {{
+    @media (max-width: 1200px) {
+      .kpi-grid {
         grid-template-columns: repeat(3, 1fr);
-      }}
-      .dashboard-grid-2, .dashboard-grid-equal {{
+      }
+      .dashboard-grid-2, .dashboard-grid-equal {
         grid-template-columns: 1fr;
-      }}
-    }}
-    @media (max-width: 768px) {{
-      body {{
+      }
+    }
+    @media (max-width: 768px) {
+      body {
         padding: 16px;
-      }}
-      .kpi-grid {{
+      }
+      .kpi-grid {
         grid-template-columns: 1fr;
-      }}
-      .top-header {{
+      }
+      .top-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 16px;
-      }}
-      .tabs-nav {{
+      }
+      .tabs-nav {
         flex-direction: column;
-      }}
-    }}
+      }
+    }
   </style>
 </head>
 <body>
@@ -751,11 +519,11 @@ html_template = f'''<!DOCTYPE html>
     <div class="kpi-orange-card">
       <div class="kpi-title">일일 활성 유저 (평균 DAU)</div>
       <div class="kpi-main-val">
-        {data_payload['kpi']['avg_dau_b']} <span class="kpi-unit">명</span>
+        461.2 <span class="kpi-unit">명</span>
       </div>
       <div class="kpi-comparison">
-        <span class="kpi-control-text">A군 {data_payload['kpi']['avg_dau_a']}명</span>
-        <span class="kpi-lift-pill">▲ +{data_payload['kpi']['dau_lift']}%</span>
+        <span class="kpi-control-text">A군 232.7명</span>
+        <span class="kpi-lift-pill">▲ +98.2%</span>
       </div>
     </div>
 
@@ -763,11 +531,11 @@ html_template = f'''<!DOCTYPE html>
     <div class="kpi-orange-card">
       <div class="kpi-title">인당 평균 방문 세션</div>
       <div class="kpi-main-val">
-        {data_payload['kpi']['avg_sess_b']} <span class="kpi-unit">회</span>
+        38.2 <span class="kpi-unit">회</span>
       </div>
       <div class="kpi-comparison">
-        <span class="kpi-control-text">A군 {data_payload['kpi']['avg_sess_a']}회</span>
-        <span class="kpi-lift-pill">▲ +{data_payload['kpi']['sess_lift']}%</span>
+        <span class="kpi-control-text">A군 19.4회</span>
+        <span class="kpi-lift-pill">▲ +97.4%</span>
       </div>
     </div>
 
@@ -775,11 +543,11 @@ html_template = f'''<!DOCTYPE html>
     <div class="kpi-orange-card">
       <div class="kpi-title">인당 커피 구매 빈도</div>
       <div class="kpi-main-val">
-        {data_payload['kpi']['orders_per_user_b']} <span class="kpi-unit">잔</span>
+        22.7 <span class="kpi-unit">잔</span>
       </div>
       <div class="kpi-comparison">
-        <span class="kpi-control-text">A군 {data_payload['kpi']['orders_per_user_a']}잔</span>
-        <span class="kpi-lift-pill">▲ +{data_payload['kpi']['orders_lift']}%</span>
+        <span class="kpi-control-text">A군 10.4잔</span>
+        <span class="kpi-lift-pill">▲ +118.8%</span>
       </div>
     </div>
 
@@ -787,11 +555,11 @@ html_template = f'''<!DOCTYPE html>
     <div class="kpi-orange-card">
       <div class="kpi-title">교차 브랜드 주문율</div>
       <div class="kpi-main-val">
-        {data_payload['kpi']['cross_rate_b']} <span class="kpi-unit">%</span>
+        48.3 <span class="kpi-unit">%</span>
       </div>
       <div class="kpi-comparison">
-        <span class="kpi-control-text">A군 {data_payload['kpi']['cross_rate_a']}%</span>
-        <span class="kpi-lift-pill">▲ +{data_payload['kpi']['cross_diff']}%p</span>
+        <span class="kpi-control-text">A군 17.8%</span>
+        <span class="kpi-lift-pill">▲ +30.4%p</span>
       </div>
     </div>
 
@@ -799,11 +567,11 @@ html_template = f'''<!DOCTYPE html>
     <div class="kpi-orange-card">
       <div class="kpi-title">결제 최종 전환율 (CVR)</div>
       <div class="kpi-main-val">
-        {data_payload['kpi']['cvr_b']} <span class="kpi-unit">%</span>
+        90.8 <span class="kpi-unit">%</span>
       </div>
       <div class="kpi-comparison">
-        <span class="kpi-control-text">A군 {data_payload['kpi']['cvr_a']}%</span>
-        <span class="kpi-lift-pill">▲ +{data_payload['kpi']['cvr_diff']}%p</span>
+        <span class="kpi-control-text">A군 81.5%</span>
+        <span class="kpi-lift-pill">▲ +9.3%p</span>
       </div>
     </div>
   </section>
@@ -857,36 +625,36 @@ html_template = f'''<!DOCTYPE html>
               <tr>
                 <td><strong>Week 1</strong></td>
                 <td>D+7 ~ D+13</td>
-                <td>{data_payload['retention_a'][1]}%</td>
-                <td class="highlight-b">{data_payload['retention_b'][1]}%</td>
-                <td><span class="lift-tag-badge green">+{round(data_payload['retention_b'][1] - data_payload['retention_a'][1], 1)}%p</span></td>
+                <td>96.2%</td>
+                <td class="highlight-b">98.7%</td>
+                <td><span class="lift-tag-badge green">+2.5%p</span></td>
               </tr>
               <tr>
                 <td><strong>Week 2</strong></td>
                 <td>D+14 ~ D+20</td>
-                <td>{data_payload['retention_a'][2]}%</td>
-                <td class="highlight-b">{data_payload['retention_b'][2]}%</td>
-                <td><span class="lift-tag-badge green">+{round(data_payload['retention_b'][2] - data_payload['retention_a'][2], 1)}%p</span></td>
+                <td>90.9%</td>
+                <td class="highlight-b">98.3%</td>
+                <td><span class="lift-tag-badge green">+7.4%p</span></td>
               </tr>
               <tr>
                 <td><strong>Week 4</strong></td>
                 <td>1개월 (D+28~34)</td>
-                <td>{data_payload['retention_a'][4]}%</td>
-                <td class="highlight-b">{data_payload['retention_b'][4]}%</td>
-                <td><span class="lift-tag-badge green">+{round(data_payload['retention_b'][4] - data_payload['retention_a'][4], 1)}%p</span></td>
+                <td>79.8%</td>
+                <td class="highlight-b">97.8%</td>
+                <td><span class="lift-tag-badge green">+18.0%p</span></td>
               </tr>
               <tr>
                 <td><strong>Week 8</strong></td>
                 <td>2개월 (D+56~62)</td>
-                <td>{data_payload['retention_a'][8]}%</td>
-                <td class="highlight-b">{data_payload['retention_b'][8]}%</td>
-                <td><span class="lift-tag-badge green">+{round(data_payload['retention_b'][8] - data_payload['retention_a'][8], 1)}%p</span></td>
+                <td>43.9%</td>
+                <td class="highlight-b">87.2%</td>
+                <td><span class="lift-tag-badge green">+43.3%p</span></td>
               </tr>
               <tr style="background: rgba(255, 92, 30, 0.12);">
                 <td><strong style="color: #FFA585;">Week 12</strong></td>
                 <td>3개월 (D+84~89)</td>
-                <td>{data_payload['retention_a'][12]}%</td>
-                <td class="highlight-b" style="color: #FF5C1E; font-size: 14px;">{data_payload['retention_b'][12]}%</td>
+                <td>9.8%</td>
+                <td class="highlight-b" style="color: #FF5C1E; font-size: 14px;">28.9%</td>
                 <td><span class="lift-tag-badge orange">▲ 약 3배 유지</span></td>
               </tr>
             </tbody>
@@ -969,16 +737,16 @@ html_template = f'''<!DOCTYPE html>
           <div style="background: #12141D; padding: 18px; border-radius: 12px; border: 1px solid #262A3B;">
             <div style="font-size: 12px; color: var(--text-gray-muted); font-weight: 600;">90일간 총 적립 포인트</div>
             <div style="font-size: 24px; font-weight: 800; color: #FFFFFF; margin-top: 4px; font-family: 'Outfit';">
-              {data_payload['points']['earned_total']:,} <span style="font-size: 14px; color: var(--po-orange);">P</span>
+              2,990,110 <span style="font-size: 14px; color: var(--po-orange);">P</span>
             </div>
             <div style="font-size: 11px; color: #34D399; margin-top: 4px;">결제액의 평균 4% 적립</div>
           </div>
           <div style="background: rgba(255, 92, 30, 0.1); padding: 18px; border-radius: 12px; border: 1px solid rgba(255, 92, 30, 0.35);">
             <div style="font-size: 12px; color: #FFA585; font-weight: 600;">90일간 총 사용 포인트</div>
             <div style="font-size: 24px; font-weight: 800; color: var(--po-orange); margin-top: 4px; font-family: 'Outfit';">
-              {data_payload['points']['used_total']:,} <span style="font-size: 14px;">P</span>
+              2,487,000 <span style="font-size: 14px;">P</span>
             </div>
-            <div style="font-size: 11px; color: #FF8554; margin-top: 4px;">전체 주문 중 {data_payload['points']['used_ratio']}%에서 차감 사용</div>
+            <div style="font-size: 11px; color: #FF8554; margin-top: 4px;">전체 주문 중 17.2%에서 차감 사용</div>
           </div>
         </div>
 
@@ -997,28 +765,28 @@ html_template = f'''<!DOCTYPE html>
 
 <script>
   // JSON Data Payload
-  const DATA = {data_json_str};
+  const DATA = {"kpi": {"avg_dau_a": 232.7, "avg_dau_b": 461.2, "dau_lift": 98.2, "avg_sess_a": 19.4, "avg_sess_b": 38.2, "sess_lift": 97.4, "orders_per_user_a": 10.4, "orders_per_user_b": 22.7, "orders_lift": 118.8, "cross_rate_a": 17.8, "cross_rate_b": 48.3, "cross_diff": 30.4, "cvr_a": 81.5, "cvr_b": 90.8, "cvr_diff": 9.3, "orders_a": 12965, "orders_b": 28373}, "chart_dates": ["2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05", "2026-06-06", "2026-06-07", "2026-06-08", "2026-06-09", "2026-06-10", "2026-06-11", "2026-06-12", "2026-06-13", "2026-06-14", "2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18", "2026-06-19", "2026-06-20", "2026-06-21", "2026-06-22", "2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26", "2026-06-27", "2026-06-28", "2026-06-29", "2026-06-30", "2026-07-01", "2026-07-02", "2026-07-03", "2026-07-04", "2026-07-05", "2026-07-06", "2026-07-07", "2026-07-08", "2026-07-09", "2026-07-10", "2026-07-11", "2026-07-12", "2026-07-13", "2026-07-14", "2026-07-15", "2026-07-16", "2026-07-17", "2026-07-18", "2026-07-19", "2026-07-20", "2026-07-21", "2026-07-22", "2026-07-23", "2026-07-24", "2026-07-25", "2026-07-26", "2026-07-27", "2026-07-28", "2026-07-29", "2026-07-30", "2026-07-31", "2026-08-01", "2026-08-02", "2026-08-03", "2026-08-04", "2026-08-05", "2026-08-06", "2026-08-07", "2026-08-08", "2026-08-09", "2026-08-10", "2026-08-11", "2026-08-12", "2026-08-13", "2026-08-14", "2026-08-15", "2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22", "2026-08-23", "2026-08-24", "2026-08-25", "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-29"], "dau_ts_a": [78, 152, 218, 291, 360, 206, 252, 487, 498, 482, 474, 466, 240, 240, 460, 487, 481, 468, 447, 197, 217, 468, 414, 428, 424, 423, 189, 166, 373, 364, 381, 359, 359, 162, 171, 359, 351, 318, 330, 310, 150, 163, 319, 319, 311, 286, 283, 114, 116, 252, 252, 237, 231, 228, 102, 83, 200, 213, 187, 201, 172, 71, 74, 154, 154, 146, 132, 149, 58, 56, 118, 124, 134, 140, 106, 61, 54, 133, 125, 126, 102, 105, 37, 61, 94, 106, 95, 107, 105, 44], "dau_ts_b": [72, 137, 209, 298, 365, 206, 224, 523, 532, 575, 552, 566, 287, 269, 591, 599, 595, 610, 626, 335, 314, 650, 631, 621, 619, 593, 328, 348, 580, 625, 626, 586, 618, 358, 334, 579, 597, 593, 596, 604, 329, 352, 577, 588, 559, 581, 559, 346, 357, 537, 554, 556, 575, 551, 332, 342, 546, 523, 518, 491, 542, 341, 350, 485, 495, 488, 490, 469, 342, 336, 515, 458, 455, 455, 453, 330, 341, 456, 472, 474, 457, 428, 345, 315, 444, 397, 461, 419, 429, 318], "weeks": ["W0", "W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "retention_a": [100.0, 96.2, 90.9, 85.8, 79.8, 72.0, 63.9, 51.3, 43.9, 34.9, 29.4, 25.0, 9.8], "retention_b": [100.0, 98.7, 98.3, 97.5, 97.8, 96.1, 95.0, 90.6, 87.2, 82.6, 76.2, 61.0, 28.9], "funnel_steps": ["app_open", "map_page (main)", "Click_cafe_location", "Search_function", "Click_cafe", "Click_To_go_menu", "Click_Here_menu", "Touch_categories", "click_Menu", "add_to_cart", "choose_pick_up_time", "input_order_request", "choose_payment_methods", "purchase"], "funnel_a": [24197, 24197, 14457, 6134, 20591, 15283, 3281, 18564, 18564, 17117, 15908, 15908, 15908, 12965], "funnel_b": [47754, 47754, 28423, 12117, 40540, 30002, 6489, 36491, 36491, 33597, 31232, 31232, 31232, 28373], "stage_labels": ["1. 매장선택 ➔ 장바구니", "2. 장바구니 ➔ 결제확인", "3. 결제확인 ➔ 최종구매 ★", "4. 전체 퍼널 (오픈➔구매)"], "stage_rates_a": [83.1, 92.9, 81.5, 53.6], "stage_rates_b": [82.9, 93.0, 90.8, 59.4], "brands": ["메가커피", "컴포즈커피", "빽다방", "텐퍼센트커피", "매머드커피", "개인스페셜티카페"], "brand_orders_a": [3613, 3434, 2079, 1418, 1363, 1058], "brand_orders_b": [6695, 6070, 4570, 3767, 3810, 3461], "points": {"earned_total": 2990110, "used_total": 2487000, "used_orders_cnt": 4885, "used_ratio": 17.2}};
 
   // Tab Switching
-  function switchTab(tabId) {{
+  function switchTab(tabId) {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
     
     event.currentTarget.classList.add('active');
     document.getElementById(tabId).classList.add('active');
-  }}
+  }
 
   // Chart.js Plugin to draw values on top of vertical bars
-  const topValuesPlugin = {{
+  const topValuesPlugin = {
     id: 'topValuesPlugin',
-    afterDatasetsDraw(chart) {{
-      const {{ ctx }} = chart;
-      chart.data.datasets.forEach((dataset, datasetIndex) => {{
+    afterDatasetsDraw(chart) {
+      const { ctx } = chart;
+      chart.data.datasets.forEach((dataset, datasetIndex) => {
         const meta = chart.getDatasetMeta(datasetIndex);
-        if (!meta.hidden) {{
-          meta.data.forEach((bar, index) => {{
+        if (!meta.hidden) {
+          meta.data.forEach((bar, index) => {
             const val = dataset.data[index];
-            if (val !== null && val !== undefined) {{
+            if (val !== null && val !== undefined) {
               ctx.save();
               ctx.fillStyle = '#FFFFFF';
               ctx.font = 'bold 11px Pretendard';
@@ -1026,27 +794,27 @@ html_template = f'''<!DOCTYPE html>
               ctx.textBaseline = 'bottom';
               ctx.fillText(val + '%', bar.x, bar.y - 4);
               ctx.restore();
-            }}
-          }});
-        }}
-      }});
-    }}
-  }};
+            }
+          });
+        }
+      });
+    }
+  };
 
   // Render Charts
-  window.addEventListener('DOMContentLoaded', () => {{
+  window.addEventListener('DOMContentLoaded', () => {
     // Global Chart.js Dark Theme Options
     Chart.defaults.color = '#94A3B8';
     Chart.defaults.font.family = 'Pretendard';
 
     // 1. Retention Curve Chart
     const ctxRet = document.getElementById('retentionChart').getContext('2d');
-    new Chart(ctxRet, {{
+    new Chart(ctxRet, {
       type: 'line',
-      data: {{
+      data: {
         labels: DATA.weeks,
         datasets: [
-          {{
+          {
             label: '실험군 B (교차 통합 적립)',
             data: DATA.retention_b,
             borderColor: '#FF5C1E',
@@ -1056,8 +824,8 @@ html_template = f'''<!DOCTYPE html>
             tension: 0.25,
             pointBackgroundColor: '#FF5C1E',
             pointRadius: 4
-          }},
-          {{
+          },
+          {
             label: '대조군 A (단일 매장 스탬프)',
             data: DATA.retention_a,
             borderColor: '#64748B',
@@ -1067,36 +835,36 @@ html_template = f'''<!DOCTYPE html>
             tension: 0.25,
             pointBackgroundColor: '#64748B',
             pointRadius: 3
-          }}
+          }
         ]
-      }},
-      options: {{
+      },
+      options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: {{
-          legend: {{ position: 'top', labels: {{ font: {{ weight: 'bold', size: 12 }} }} }},
-          tooltip: {{ callbacks: {{ label: (item) => `${{item.dataset.label}}: ${{item.raw}}%` }} }}
-        }},
-        scales: {{
-          y: {{
+        plugins: {
+          legend: { position: 'top', labels: { font: { weight: 'bold', size: 12 } } },
+          tooltip: { callbacks: { label: (item) => `${item.dataset.label}: ${item.raw}%` } }
+        },
+        scales: {
+          y: {
             beginAtZero: true,
             max: 105,
-            ticks: {{ callback: (v) => v + '%' }},
-            grid: {{ color: '#1E2230' }}
-          }},
-          x: {{ grid: {{ display: false }} }}
-        }}
-      }}
-    }});
+            ticks: { callback: (v) => v + '%' },
+            grid: { color: '#1E2230' }
+          },
+          x: { grid: { display: false } }
+        }
+      }
+    });
 
     // 2. Daily DAU Time-Series Area Chart
     const ctxDau = document.getElementById('dauChart').getContext('2d');
-    new Chart(ctxDau, {{
+    new Chart(ctxDau, {
       type: 'line',
-      data: {{
+      data: {
         labels: DATA.chart_dates,
         datasets: [
-          {{
+          {
             label: '실험군 B (교차 적립 DAU)',
             data: DATA.dau_ts_b,
             borderColor: '#FF5C1E',
@@ -1105,8 +873,8 @@ html_template = f'''<!DOCTYPE html>
             fill: true,
             pointRadius: 0,
             tension: 0.2
-          }},
-          {{
+          },
+          {
             label: '대조군 A (기존 스탬프 DAU)',
             data: DATA.dau_ts_a,
             borderColor: '#64748B',
@@ -1115,164 +883,136 @@ html_template = f'''<!DOCTYPE html>
             fill: true,
             pointRadius: 0,
             tension: 0.2
-          }}
+          }
         ]
-      }},
-      options: {{
+      },
+      options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: {{
-          legend: {{ position: 'top', labels: {{ font: {{ weight: 'bold', size: 12 }} }} }}
-        }},
-        scales: {{
-          y: {{ beginAtZero: true, grid: {{ color: '#1E2230' }} }},
-          x: {{ ticks: {{ maxTicksLimit: 12 }}, grid: {{ display: false }} }}
-        }}
-      }}
-    }});
+        plugins: {
+          legend: { position: 'top', labels: { font: { weight: 'bold', size: 12 } } }
+        },
+        scales: {
+          y: { beginAtZero: true, grid: { color: '#1E2230' } },
+          x: { ticks: { maxTicksLimit: 12 }, grid: { display: false } }
+        }
+      }
+    });
 
     // 3. 14-Step Funnel Chart
     const ctxFunnel = document.getElementById('funnelChart').getContext('2d');
-    new Chart(ctxFunnel, {{
+    new Chart(ctxFunnel, {
       type: 'bar',
-      data: {{
+      data: {
         labels: DATA.funnel_steps,
         datasets: [
-          {{
+          {
             label: '실험군 B (통합 적립)',
             data: DATA.funnel_b,
             backgroundColor: '#FF5C1E',
             borderRadius: 5
-          }},
-          {{
+          },
+          {
             label: '대조군 A (단일 스탬프)',
             data: DATA.funnel_a,
             backgroundColor: '#475569',
             borderRadius: 5
-          }}
+          }
         ]
-      }},
-      options: {{
+      },
+      options: {
         indexAxis: 'y',
         responsive: true,
         maintainAspectRatio: false,
-        plugins: {{
-          legend: {{ position: 'top', labels: {{ font: {{ weight: 'bold', size: 12 }} }} }}
-        }},
-        scales: {{
-          x: {{ grid: {{ color: '#1E2230' }} }},
-          y: {{ grid: {{ display: false }}, ticks: {{ font: {{ size: 11 }} }} }}
-        }}
-      }}
-    }});
+        plugins: {
+          legend: { position: 'top', labels: { font: { weight: 'bold', size: 12 } } }
+        },
+        scales: {
+          x: { grid: { color: '#1E2230' } },
+          y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+        }
+      }
+    });
 
     // 4. KEY CONVERSION STAGES: VERTICAL BAR CHART WITH NUMBERS ON TOP
     const ctxStage = document.getElementById('stageConversionChart').getContext('2d');
-    new Chart(ctxStage, {{
+    new Chart(ctxStage, {
       type: 'bar',
-      data: {{
+      data: {
         labels: DATA.stage_labels,
         datasets: [
-          {{
+          {
             label: '실험군 B (통합적립 전환율)',
             data: DATA.stage_rates_b,
             backgroundColor: '#FF5C1E',
             borderRadius: 6
-          }},
-          {{
+          },
+          {
             label: '대조군 A (단일스탬프 전환율)',
             data: DATA.stage_rates_a,
             backgroundColor: '#475569',
             borderRadius: 6
-          }}
+          }
         ]
-      }},
+      },
       plugins: [topValuesPlugin],
-      options: {{
+      options: {
         responsive: true,
         maintainAspectRatio: false,
-        layout: {{
-          padding: {{ top: 22 }} // 막대 상단 수치 표기를 위한 패딩
-        }},
-        plugins: {{
-          legend: {{ position: 'top', labels: {{ font: {{ weight: 'bold', size: 12 }} }} }},
-          tooltip: {{ callbacks: {{ label: (item) => `${{item.dataset.label}}: ${{item.raw}}%` }} }}
-        }},
-        scales: {{
-          y: {{
+        layout: {
+          padding: { top: 22 } // 막대 상단 수치 표기를 위한 패딩
+        },
+        plugins: {
+          legend: { position: 'top', labels: { font: { weight: 'bold', size: 12 } } },
+          tooltip: { callbacks: { label: (item) => `${item.dataset.label}: ${item.raw}%` } }
+        },
+        scales: {
+          y: {
             beginAtZero: true,
             max: 105,
-            ticks: {{ callback: (v) => v + '%' }},
-            grid: {{ color: '#1E2230' }}
-          }},
-          x: {{ grid: {{ display: false }}, ticks: {{ font: {{ weight: '600', size: 12 }} }} }}
-        }}
-      }}
-    }});
+            ticks: { callback: (v) => v + '%' },
+            grid: { color: '#1E2230' }
+          },
+          x: { grid: { display: false }, ticks: { font: { weight: '600', size: 12 } } }
+        }
+      }
+    });
 
     // 5. Brand Distribution Bar Chart
     const ctxBrand = document.getElementById('brandChart').getContext('2d');
-    new Chart(ctxBrand, {{
+    new Chart(ctxBrand, {
       type: 'bar',
-      data: {{
+      data: {
         labels: DATA.brands,
         datasets: [
-          {{
+          {
             label: '실험군 B 주문 건수',
             data: DATA.brand_orders_b,
             backgroundColor: '#FF5C1E',
             borderRadius: 6
-          }},
-          {{
+          },
+          {
             label: '대조군 A 주문 건수',
             data: DATA.brand_orders_a,
             backgroundColor: '#475569',
             borderRadius: 6
-          }}
+          }
         ]
-      }},
-      options: {{
+      },
+      options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: {{
-          legend: {{ position: 'top', labels: {{ font: {{ weight: 'bold', size: 12 }} }} }}
-        }},
-        scales: {{
-          y: {{ beginAtZero: true, grid: {{ color: '#1E2230' }} }},
-          x: {{ grid: {{ display: false }} }}
-        }}
-      }}
-    }});
-  }});
+        plugins: {
+          legend: { position: 'top', labels: { font: { weight: 'bold', size: 12 } } }
+        },
+        scales: {
+          y: { beginAtZero: true, grid: { color: '#1E2230' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  });
 </script>
 
 </body>
 </html>
-'''
-
-print(f"[3/4] 새 톤앤매너 대시보드 파일 작성 중: {OUTPUT_HTML} & passorder_dashboard.html...")
-with open(OUTPUT_HTML, "w", encoding="utf-8") as f:
-    f.write(html_template)
-
-OUTPUT_HTML2 = os.path.join(OUTPUT_DIR, "passorder_dashboard.html")
-with open(OUTPUT_HTML2, "w", encoding="utf-8") as f:
-    f.write(html_template)
-
-# 루트 index.html (GitHub Pages 배포용) 동시 동기화
-ROOT_INDEX = os.path.join(BASE_DIR, "index.html")
-with open(ROOT_INDEX, "w", encoding="utf-8") as f:
-    f.write(html_template)
-
-file_size_kb = os.path.getsize(OUTPUT_HTML2) / 1024
-print(f"\n[4/4] 완료! 패스오더 공식 톤앤매너 대시보드가 성공적으로 재생성되었습니다.")
-print(f"파일 경로: {OUTPUT_HTML2} ({file_size_kb:.1f} KB)")
-print(f"웹 배포 파일: {ROOT_INDEX}")
-
-# 브라우저 자동 실행
-try:
-    import webbrowser
-    webbrowser.open(f"file://{os.path.abspath(OUTPUT_HTML2)}")
-    print("[INFO] 기본 웹 브라우저에서 대시보드를 자동으로 열었습니다.")
-except Exception as e:
-    pass
-
