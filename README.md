@@ -157,7 +157,7 @@ To simulate real-world app interactions, realistic event telemetry matching Pass
 
 <p align="center">
   <a href="https://sano035-design.github.io/passorder/output/passorder_dashboard_en.html" target="_blank">
-    <img src="templates/passorder_dashboard_preview.png" alt="Pass Order Interactive Dashboard Preview" width="100%" />
+    <img src="templates/screenshot_english_version_dashboard.jpg" alt="Pass Order Interactive Dashboard Preview (English)" width="100%" />
   </a><br>
   <i>👉 <b>Click the image above or <a href="https://sano035-design.github.io/passorder/output/passorder_dashboard_en.html" target="_blank">Launch Live Dashboard (GitHub Pages)</a></b> to interactively explore tabs, hover values, and cohort heatmaps in real time!</i>
 </p>
@@ -192,7 +192,8 @@ passorder/
 │   └── passorder_dashboard_en.html # Standalone Interactive Dark-Theme Dashboard (English)
 ├── templates/
 │   ├── passorder_logo.png       # Official Brand Identity Asset
-│   ├── passorder_dashboard_preview.png # Real Interactive Dashboard Screenshot
+│   ├── passorder_dashboard_preview.png # Real Interactive Dashboard Screenshot (Korean)
+│   ├── screenshot_english_version_dashboard.jpg # Real Interactive Dashboard Screenshot (English)
 │   └── passorder_tone_manner.png # Official Web Tone & Manner Reference
 ├── design.md                    # Dark UI/UX Design Tokens & Component Guide
 ├── generate_data.py             # 90-Day A/B Test Telemetry Simulation Pipeline
