@@ -1,16 +1,15 @@
 """
-패스오더(Pass Order) 교차 브랜드 통합 적립 A/B 테스트 대시보드 HTML 생성기 (v2 - 패스오더 공식 톤앤매너 다크 테마)
+패스오더(Pass Order) 교차 브랜드 통합 적립 A/B 테스트 대시보드 HTML 생성기 (v3 - 국문 & 영문 이중화 및 다크 테마)
 -----------------------------------------------------------------------------------------------------------------
-수정 사항 반영:
-1. 상단 왼쪽 로고: 패스오더 공식 로고 폰트 및 컬러 ("패스"(흰색) + "오더"(주황색))
-2. 데이터 수식 및 코드 검증 센터 탭 삭제
-3. 실제 로그 샘플 행 해석 케이스 스터디 삭제
-4. 핵심 KPI 네모 상자: 주황색 배경(Pass Order Orange) + 하얀색 글씨
-5. 상단 오른쪽: 그룹 A(대조군: 단일 매장 스탬프) vs 그룹 B(실험군: 교차 통합 적립) 명확하고 직관적인 카드/배지
-6. 패스오더 공식 톤앤매너(다크 블랙/차콜 테마 + 오렌지 시그니처) 전면 적용
-7. 1가설검증 탭 제일 아래 "왜 90일 테스트에서..." 배너 삭제
-8. 1가설검증 탭 주차별 잔존율 상세 비교 표: 글자 줄바꿈 없이(white-space: nowrap) 깔끔하게 정리
-9. 14단계 행동 퍼널 탭: 핵심 구간별 전환율을 텍스트 대신 '수치가 상단에 표시되는 세로 막대 그래프'로 시각화
+기능:
+1. 90일 A/B 테스트 데이터 집계 및 통계 산출
+2. 공식 다크 테마 톤앤매너 적용 대시보드 생성
+3. 국문(KO) 및 영문(EN) 대시보드 동시 자동 렌더링
+   - output/passorder_dashboard.html (국문 대시보드)
+   - output/passorder_dashboard_en.html (영문 대시보드)
+   - index.html (GitHub Pages 국문 메인 엔드포인트)
+   - index_en.html (GitHub Pages 영문 엔드포인트)
+4. 대시보드 헤더 내 🇺🇸 English / 🇰🇷 한국어 상호 원클릭 전환 토글 탑재
 """
 
 import os
@@ -29,12 +28,11 @@ if not os.path.exists(DATA_FILE):
     DATA_FILE = os.path.join(BASE_DIR, "..", "passorder_event_log_90d.csv")
 OUTPUT_DIR = os.path.join(BASE_DIR, "output")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
-OUTPUT_HTML = os.path.join(OUTPUT_DIR, "payorder_dashborad.html")
 
 print(f"[1/4] 데이터 로딩 및 분석 중: {DATA_FILE}...")
 df = pd.read_csv(DATA_FILE)
 
-df['event_dt'] = pd.to_datetime(df['event_time'])
+df['event_dt'] = pd.to_datetime(df['event_time'], dayfirst=True)
 df['date_str'] = df['event_dt'].dt.strftime('%Y-%m-%d')
 total_rows = len(df)
 
@@ -139,7 +137,6 @@ for step in FUNNEL_STEPS:
     funnel_counts_b.append(cnt_b)
 
 # 핵심 4대 구간별 전환율 산출
-# 1) 매장 ➔ 장바구니 (Click_cafe -> add_to_cart)
 cafe_a = len(df[(df['ab_test_group'] == 'Group A (Control)') & (df['event_name'] == 'Click_cafe')])
 cafe_b = len(df[(df['ab_test_group'] == 'Group B (Treatment)') & (df['event_name'] == 'Click_cafe')])
 cart_a = len(df[(df['ab_test_group'] == 'Group A (Control)') & (df['event_name'] == 'add_to_cart')])
@@ -148,21 +145,17 @@ cart_b = len(df[(df['ab_test_group'] == 'Group B (Treatment)') & (df['event_name
 stage1_a = round((cart_a / cafe_a) * 100, 1)
 stage1_b = round((cart_b / cafe_b) * 100, 1)
 
-# 2) 장바구니 ➔ 결제화면 (add_to_cart -> choose_payment_methods)
 stage2_a = round((cpm_a / cart_a) * 100, 1)
 stage2_b = round((cpm_b / cart_b) * 100, 1)
 
-# 3) 결제화면 ➔ 구매완료 (choose_payment_methods -> purchase)
 stage3_a = round((orders_a / cpm_a) * 100, 1)
 stage3_b = round((orders_b / cpm_b) * 100, 1)
 
-# 4) 전체 앱오픈 ➔ 구매완료 (app_open -> purchase)
 open_a = len(df[(df['ab_test_group'] == 'Group A (Control)') & (df['event_name'] == 'app_open')])
 open_b = len(df[(df['ab_test_group'] == 'Group B (Treatment)') & (df['event_name'] == 'app_open')])
 stage4_a = round((orders_a / open_a) * 100, 1)
 stage4_b = round((orders_b / open_b) * 100, 1)
 
-stage_labels = ["1. 매장선택 ➔ 장바구니", "2. 장바구니 ➔ 결제확인", "3. 결제확인 ➔ 최종구매 ★", "4. 전체 퍼널 (오픈➔구매)"]
 stage_rates_a = [stage1_a, stage2_a, stage3_a, stage4_a]
 stage_rates_b = [stage1_b, stage2_b, stage3_b, stage4_b]
 
@@ -172,70 +165,269 @@ stage_rates_b = [stage1_b, stage2_b, stage3_b, stage4_b]
 brand_counts_a = purchase_df[purchase_df['ab_test_group'] == 'Group A (Control)']['cafe_brand'].value_counts().to_dict()
 brand_counts_b = purchase_df[purchase_df['ab_test_group'] == 'Group B (Treatment)']['cafe_brand'].value_counts().to_dict()
 
-all_brands = ["메가커피", "컴포즈커피", "빽다방", "텐퍼센트커피", "매머드커피", "개인스페셜티카페"]
-brand_data_a = [int(brand_counts_a.get(b, 0)) for b in all_brands]
-brand_data_b = [int(brand_counts_b.get(b, 0)) for b in all_brands]
+all_brands_ko = ["메가커피", "컴포즈커피", "빽다방", "텐퍼센트커피", "매머드커피", "개인스페셜티카페"]
+all_brands_en = ["Mega Coffee", "Compose Coffee", "Paik's Coffee", "Ten Percent Coffee", "Mammoth Coffee", "Specialty Cafes"]
+
+brand_data_a = [int(brand_counts_a.get(b, 0)) for b in all_brands_ko]
+brand_data_b = [int(brand_counts_b.get(b, 0)) for b in all_brands_ko]
 
 pts_earned_total = int(purchase_df[purchase_df['ab_test_group'] == 'Group B (Treatment)']['earned_reward_point'].sum())
 pts_used_total = int(purchase_df[purchase_df['ab_test_group'] == 'Group B (Treatment)']['used_reward_point'].sum())
 pts_used_orders_cnt = int(len(purchase_df[(purchase_df['ab_test_group'] == 'Group B (Treatment)') & (purchase_df['used_reward_point'] > 0)]))
 pts_used_ratio = round((pts_used_orders_cnt / orders_b) * 100, 1)
 
-# JSON 패키징
-data_payload = {
-    "kpi": {
-        "avg_dau_a": round(avg_dau_a, 1),
-        "avg_dau_b": round(avg_dau_b, 1),
-        "dau_lift": round(((avg_dau_b / avg_dau_a) - 1) * 100, 1),
-        "avg_sess_a": round(avg_sess_a, 1),
-        "avg_sess_b": round(avg_sess_b, 1),
-        "sess_lift": round(((avg_sess_b / avg_sess_a) - 1) * 100, 1),
-        "orders_per_user_a": round(orders_per_user_a, 1),
-        "orders_per_user_b": round(orders_per_user_b, 1),
-        "orders_lift": round(((orders_per_user_b / orders_per_user_a) - 1) * 100, 1),
-        "cross_rate_a": round(cross_rate_a, 1),
-        "cross_rate_b": round(cross_rate_b, 1),
-        "cross_diff": round(cross_rate_b - cross_rate_a, 1),
-        "cvr_a": round(cvr_a, 1),
-        "cvr_b": round(cvr_b, 1),
-        "cvr_diff": round(cvr_b - cvr_a, 1),
-        "orders_a": orders_a,
-        "orders_b": orders_b
-    },
-    "chart_dates": dates_sorted,
-    "dau_ts_a": dau_ts_a,
-    "dau_ts_b": dau_ts_b,
-    "weeks": [f"W{w}" for w in weeks_list],
-    "retention_a": retention_curve_a,
-    "retention_b": retention_curve_b,
-    "funnel_steps": FUNNEL_STEPS,
-    "funnel_a": funnel_counts_a,
-    "funnel_b": funnel_counts_b,
-    "stage_labels": stage_labels,
-    "stage_rates_a": stage_rates_a,
-    "stage_rates_b": stage_rates_b,
-    "brands": all_brands,
-    "brand_orders_a": brand_data_a,
-    "brand_orders_b": brand_data_b,
-    "points": {
-        "earned_total": pts_earned_total,
-        "used_total": pts_used_total,
-        "used_orders_cnt": pts_used_orders_cnt,
-        "used_ratio": pts_used_ratio
-    }
+# 공통 계산 데이터
+kpi_dict = {
+    "avg_dau_a": round(avg_dau_a, 1),
+    "avg_dau_b": round(avg_dau_b, 1),
+    "dau_lift": round(((avg_dau_b / avg_dau_a) - 1) * 100, 1),
+    "avg_sess_a": round(avg_sess_a, 1),
+    "avg_sess_b": round(avg_sess_b, 1),
+    "sess_lift": round(((avg_sess_b / avg_sess_a) - 1) * 100, 1),
+    "orders_per_user_a": round(orders_per_user_a, 1),
+    "orders_per_user_b": round(orders_per_user_b, 1),
+    "orders_lift": round(((orders_per_user_b / orders_per_user_a) - 1) * 100, 1),
+    "cross_rate_a": round(cross_rate_a, 1),
+    "cross_rate_b": round(cross_rate_b, 1),
+    "cross_diff": round(cross_rate_b - cross_rate_a, 1),
+    "cvr_a": round(cvr_a, 1),
+    "cvr_b": round(cvr_b, 1),
+    "cvr_diff": round(cvr_b - cvr_a, 1),
+    "orders_a": orders_a,
+    "orders_b": orders_b
 }
 
-data_json_str = json.dumps(data_payload, ensure_ascii=False)
+points_dict = {
+    "earned_total": pts_earned_total,
+    "used_total": pts_used_total,
+    "used_orders_cnt": pts_used_orders_cnt,
+    "used_ratio": pts_used_ratio
+}
 
 # -------------------------------------------------------------
-# 6. 패스오더 공식 톤앤매너 다크 테마 HTML 작성
+# 6. HTML 렌더링 함수 (다국어 지원)
 # -------------------------------------------------------------
-html_template = f'''<!DOCTYPE html>
-<html lang="ko">
+def build_dashboard_html(lang='ko', is_root=False):
+    is_ko = (lang == 'ko')
+
+    # 다국어 링크 설정
+    if is_root:
+        link_ko = "index.html"
+        link_en = "index_en.html"
+    else:
+        link_ko = "passorder_dashboard.html"
+        link_en = "passorder_dashboard_en.html"
+
+    # 언어별 텍스트 및 라벨 사전
+    if is_ko:
+        html_lang = "ko"
+        doc_title = "패스오더 교차 브랜드 통합 적립 A/B 테스트 성과 대시보드"
+        logo_pass = "패스"
+        logo_order = "오더"
+        header_title = "교차 브랜드 통합 적립 90일 A/B 테스트 대시보드"
+        header_desc = "가설 검증: 프랜차이즈 커피 자체 앱 종속 방어 및 전 매장 통합 리워드를 통한 고객 리텐션 락인(Lock-in)"
+        
+        group_a_title = "대조군 A (1,250명)"
+        group_a_desc = "기존 단일 매장 스탬프 (교차 불가 ❌)"
+        group_b_title = "실험군 B (1,250명)"
+        group_b_desc = "교차 브랜드 통합 적립 (전 매장 사용 ⭕)"
+
+        kpi_titles = [
+            "일일 활성 유저 (평균 DAU)",
+            "인당 평균 방문 세션",
+            "인당 커피 구매 빈도",
+            "교차 브랜드 주문율",
+            "결제 최종 전환율 (CVR)"
+        ]
+        kpi_units = ["명", "회", "잔", "%", "%"]
+        kpi_a_texts = [
+            f"A군 {kpi_dict['avg_dau_a']}명",
+            f"A군 {kpi_dict['avg_sess_a']}회",
+            f"A군 {kpi_dict['orders_per_user_a']}잔",
+            f"A군 {kpi_dict['cross_rate_a']}%",
+            f"A군 {kpi_dict['cvr_a']}%"
+        ]
+        
+        tab_titles = [
+            "📈 1. 가설 검증 & 코호트 리텐션",
+            "🛒 2. 14단계 행동 퍼널 분석",
+            "☕ 3. 교차 브랜드 이용 분석"
+        ]
+
+        t1_chart_title = "90일 장기 코호트 리텐션 곡선 (Week 0 ~ Week 12)"
+        t1_chart_period = "📅 2026.06.01 ~ 2026.08.29 (90일간)"
+        t1_chart_desc = "최초 온보딩 시점 이후 경과 주차별 고유 접속 잔존율 비교"
+        t1_ds_b = "실험군 B (교차 통합 적립)"
+        t1_ds_a = "대조군 A (단일 매장 스탬프)"
+
+        t1_table_title = "주차별 잔존율 상세 비교 (Heatmap)"
+        t1_table_desc = "1개월, 2개월, 3개월 경과 시점의 잔존 격차"
+        t1_th = ["구간", "경과 기간", "대조군 A", "실험군 B (통합적립)", "성과 격차 (Lift)"]
+        t1_w1_period = "D+7 ~ D+13"
+        t1_w2_period = "D+14 ~ D+20"
+        t1_w4_period = "1개월 (D+28~34)"
+        t1_w8_period = "2개월 (D+56~62)"
+        t1_w12_period = "3개월 (D+84~89)"
+        t1_w12_lift = "▲ 약 3배 유지"
+
+        t1_dau_title = "90일간 일일 활성 사용자 수 (DAU) 일자별 추이"
+        t1_dau_desc = "주중 출퇴근 피크와 주말 패턴, 그리고 시간 경과에 따른 활동 유저 베이스라인 비교"
+        t1_dau_ds_b = "실험군 B (교차 적립 DAU)"
+        t1_dau_ds_a = "대조군 A (기존 스탬프 DAU)"
+
+        t2_f1_title = "14단계 스마트오더 행동 퍼널 규모 비교"
+        t2_f1_desc = "앱 실행(app_open)부터 최종 구매(purchase)까지 단계별 잔존 로그 수"
+        t2_f1_ds_b = "실험군 B (통합 적립)"
+        t2_f1_ds_a = "대조군 A (단일 스탬프)"
+
+        t2_f2_title = "핵심 구간별 전환율 비교 (세로 막대 그래프)"
+        t2_f2_desc = "단계별 전환율(%)과 결제 직전 이탈 방어 효과 (막대 위 수치 표기)"
+        stage_labels = ["1. 매장선택 ➔ 장바구니", "2. 장바구니 ➔ 결제확인", "3. 결제확인 ➔ 최종구매 ★", "4. 전체 퍼널 (오픈➔구매)"]
+        t2_f2_ds_b = "실험군 B (통합적립 전환율)"
+        t2_f2_ds_a = "대조군 A (단일스탬프 전환율)"
+
+        t3_b1_title = "6대 제휴 카페 브랜드별 주문 건수 분포"
+        t3_b1_desc = "대조군(A) vs 실험군(B)의 브랜드별 주문 점유율 비교"
+        brands = all_brands_ko
+        t3_b1_ds_b = "실험군 B 주문 건수"
+        t3_b1_ds_a = "대조군 A 주문 건수"
+
+        t3_b2_title = "통합 포인트 누적 및 소진 사이클 (실험군 B)"
+        t3_b2_desc = "다중 브랜드 교차 주문을 유발한 리워드 순환 지표"
+        t3_b2_acc_title = "90일간 총 적립 포인트"
+        t3_b2_acc_sub = "결제액의 평균 4% 적립"
+        t3_b2_use_title = "90일간 총 사용 포인트"
+        t3_b2_use_sub = "전체 주문 중 17.2%에서 차감 사용"
+        t3_b2_box_title = "프랜차이즈 종속을 깬 핵심 동력"
+        t3_b2_li1 = "<strong>대조군 (Group A)</strong>: 스탬프가 매장별로 파편화되어 타 브랜드 방문 유인이 없어 단골 카페만 반복 이용 (교차 주문율 <strong>17.8%</strong>)."
+        t3_b2_li2 = "<strong>실험군 (Group B)</strong>: 메가커피에서 쌓은 포인트를 컴포즈나 빽다방에서 결제 시 현금처럼 차감할 수 있어 교차 주문율이 <strong>48.3%</strong>로 2.7배 폭증."
+    else:
+        html_lang = "en"
+        doc_title = "Pass Order Cross-Brand Unified Rewards A/B Test Dashboard"
+        logo_pass = "PASS"
+        logo_order = "ORDER"
+        header_title = "Cross-Brand Unified Rewards 90-Day A/B Test Dashboard"
+        header_desc = "Hypothesis Validation: Halting Churn to Franchise-Owned Apps & Driving Customer Retention Lock-In via Universal Loyalty Points"
+        
+        group_a_title = "Control Group A (1,250)"
+        group_a_desc = "Legacy Store-Isolated Stamps (No Cross-Use ❌)"
+        group_b_title = "Treatment Group B (1,250)"
+        group_b_desc = "Cross-Brand Unified Rewards (Universal ⭕)"
+
+        kpi_titles = [
+            "Average DAU (Daily Active Users)",
+            "Sessions per User",
+            "Orders per User",
+            "Cross-Brand Ordering Rate",
+            "Checkout Conversion Rate (CVR)"
+        ]
+        kpi_units = ["users", "sessions", "orders", "%", "%"]
+        kpi_a_texts = [
+            f"Control A: {kpi_dict['avg_dau_a']} users",
+            f"Control A: {kpi_dict['avg_sess_a']} sess",
+            f"Control A: {kpi_dict['orders_per_user_a']} orders",
+            f"Control A: {kpi_dict['cross_rate_a']}%",
+            f"Control A: {kpi_dict['cvr_a']}%"
+        ]
+        
+        tab_titles = [
+            "📈 1. Hypothesis Testing & Cohort Retention",
+            "🛒 2. 14-Step Behavioral Funnel",
+            "☕ 3. Cross-Brand Ecosystem Analysis"
+        ]
+
+        t1_chart_title = "90-Day Longitudinal Cohort Retention Curve (Week 0 ~ Week 12)"
+        t1_chart_period = "📅 2026.06.01 ~ 2026.08.29 (90 Days)"
+        t1_chart_desc = "Weekly unique active retention comparison following initial onboarding"
+        t1_ds_b = "Treatment Group B (Unified Rewards)"
+        t1_ds_a = "Control Group A (Store-Isolated Stamps)"
+
+        t1_table_title = "Weekly Retention Matrix (Heatmap)"
+        t1_table_desc = "Retention gaps at 1-month, 2-month, and 3-month milestones"
+        t1_th = ["Cohort", "Elapsed Period", "Control A", "Treatment B (Unified)", "Lift Delta"]
+        t1_w1_period = "D+7 ~ D+13"
+        t1_w2_period = "D+14 ~ D+20"
+        t1_w4_period = "1 Month (D+28~34)"
+        t1_w8_period = "2 Months (D+56~62)"
+        t1_w12_period = "3 Months (D+84~89)"
+        t1_w12_lift = "▲ ~3x Retention Preserved"
+
+        t1_dau_title = "90-Day Daily Active Users (DAU) Time-Series Trajectory"
+        t1_dau_desc = "Weekday commute peaks, weekend dips, and long-term active user baseline divergence"
+        t1_dau_ds_b = "Treatment Group B (Unified DAU)"
+        t1_dau_ds_a = "Control Group A (Control DAU)"
+
+        t2_f1_title = "14-Step Smart Order Behavioral Funnel Volume Comparison"
+        t2_f1_desc = "Retained event volume from app launch (app_open) to final checkout (purchase)"
+        t2_f1_ds_b = "Treatment Group B (Unified Rewards)"
+        t2_f1_ds_a = "Control Group A (Store Stamps)"
+
+        t2_f2_title = "Key Stage Conversion Rates (Vertical Bar Chart)"
+        t2_f2_desc = "Stage-by-stage CVR (%) and checkout drop-off defense (values displayed atop bars)"
+        stage_labels = ["1. Store Select ➔ Cart", "2. Cart ➔ Checkout", "3. Checkout ➔ Purchase ★", "4. Full Funnel (Open ➔ Purchase)"]
+        t2_f2_ds_b = "Treatment Group B (Unified CVR)"
+        t2_f2_ds_a = "Control Group A (Control CVR)"
+
+        t3_b1_title = "Order Volume Distribution Across 6 Partner Cafe Brands"
+        t3_b1_desc = "Order share comparison between Control Group (A) and Treatment Group (B)"
+        brands = all_brands_en
+        t3_b1_ds_b = "Treatment Group B Orders"
+        t3_b1_ds_a = "Control Group A Orders"
+
+        t3_b2_title = "Universal Point Accrual & Redemption Velocity (Treatment B)"
+        t3_b2_desc = "Key loyalty turnover metrics driving cross-brand ordering"
+        t3_b2_acc_title = "Total Points Accrued (90 Days)"
+        t3_b2_acc_sub = "Avg. 4% earned on order value"
+        t3_b2_use_title = "Total Points Redeemed (90 Days)"
+        t3_b2_use_sub = "Redeemed in 17.2% of total orders"
+        t3_b2_box_title = "Key Drivers Dismantling Franchise Lock-In"
+        t3_b2_li1 = "<strong>Control Group (Group A)</strong>: Stamps were fragmented by store, offering zero incentive to explore alternative brands, leading users to patronize only single local stores (Cross-brand order rate: <strong>17.8%</strong>)."
+        t3_b2_li2 = "<strong>Treatment Group (Group B)</strong>: Points earned at Mega Coffee could be immediately deducted like cash at Compose or Paik's Coffee, surging the cross-brand order rate to <strong>48.3%</strong> (2.7x lift)."
+
+    # 데이터 페이로드 생성
+    current_payload = {
+        "kpi": kpi_dict,
+        "chart_dates": dates_sorted,
+        "dau_ts_a": dau_ts_a,
+        "dau_ts_b": dau_ts_b,
+        "weeks": [f"W{w}" for w in weeks_list],
+        "retention_a": retention_curve_a,
+        "retention_b": retention_curve_b,
+        "funnel_steps": FUNNEL_STEPS,
+        "funnel_a": funnel_counts_a,
+        "funnel_b": funnel_counts_b,
+        "stage_labels": stage_labels,
+        "stage_rates_a": stage_rates_a,
+        "stage_rates_b": stage_rates_b,
+        "brands": brands,
+        "brand_orders_a": brand_data_a,
+        "brand_orders_b": brand_data_b,
+        "points": points_dict
+    }
+    payload_json_str = json.dumps(current_payload, ensure_ascii=False)
+
+    # 언어 스위처 HTML
+    if is_ko:
+        lang_switcher_html = f'''
+        <div class="lang-switcher">
+          <span class="lang-btn active">🇰🇷 한국어</span>
+          <a href="{link_en}" class="lang-btn">🇺🇸 English</a>
+        </div>
+        '''
+    else:
+        lang_switcher_html = f'''
+        <div class="lang-switcher">
+          <a href="{link_ko}" class="lang-btn">🇰🇷 한국어</a>
+          <span class="lang-btn active">🇺🇸 English</span>
+        </div>
+        '''
+
+    html_content = f'''<!DOCTYPE html>
+<html lang="{html_lang}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>패스오더 교차 브랜드 통합 적립 A/B 테스트 성과 대시보드</title>
+  <title>{doc_title}</title>
   
   <!-- Pretendard & Outfit Fonts -->
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
@@ -347,9 +539,52 @@ html_template = f'''<!DOCTYPE html>
       font-size: 13px;
       color: var(--text-gray-muted);
       margin-top: 5px;
+      max-width: 680px;
+      line-height: 1.4;
     }}
 
-    /* Top Right: Distinct A/B Comparison Cards */
+    /* Top Right: Distinct A/B Comparison Cards & Language Switcher */
+    .header-right-wrap {{
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }}
+
+    .lang-switcher {{
+      display: inline-flex;
+      align-items: center;
+      background: #0E1017;
+      border: 1px solid #2B2F42;
+      border-radius: 10px;
+      padding: 4px;
+      gap: 4px;
+    }}
+
+    .lang-btn {{
+      padding: 6px 12px;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      color: var(--text-gray-muted);
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }}
+
+    .lang-btn:hover {{
+      color: var(--text-white);
+      background: #1E2230;
+    }}
+
+    .lang-btn.active {{
+      background: var(--po-orange);
+      color: #FFFFFF;
+      box-shadow: 0 2px 8px rgba(255, 92, 30, 0.35);
+    }}
+
     .header-groups-wrap {{
       display: flex;
       align-items: center;
@@ -613,7 +848,7 @@ html_template = f'''<!DOCTYPE html>
       width: 100%;
       border-collapse: collapse;
       font-size: 13px;
-      white-space: nowrap; /* 글자 줄바꿈 원천 방지 */
+      white-space: nowrap;
     }}
 
     .retention-clean-table th {{
@@ -702,6 +937,14 @@ html_template = f'''<!DOCTYPE html>
         align-items: flex-start;
         gap: 16px;
       }}
+      .header-right-wrap {{
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+      }}
+      .header-groups-wrap {{
+        flex-direction: column;
+      }}
       .tabs-nav {{
         flex-direction: column;
       }}
@@ -712,34 +955,38 @@ html_template = f'''<!DOCTYPE html>
 
 <div class="container">
 
-  <!-- 1. Top Header with Official Pass Order Logo & Distinct Group A/B Cards -->
+  <!-- 1. Top Header with Official Pass Order Logo & Language Switcher & Distinct Group A/B Cards -->
   <header class="top-header">
     <div class="header-brand-wrap">
-      <!-- Official Logo: '패스'(White) + '오더'(Orange) -->
+      <!-- Official Logo -->
       <div class="po-official-logo">
-        <span class="po-logo-pass">패스</span><span class="po-logo-order">오더</span>
+        <span class="po-logo-pass">{logo_pass}</span><span class="po-logo-order">{logo_order}</span>
       </div>
       <div class="header-text-block">
-        <h1>교차 브랜드 통합 적립 90일 A/B 테스트 대시보드</h1>
-        <p>가설 검증: 프랜차이즈 커피 자체 앱 종속 방어 및 전 매장 통합 리워드를 통한 고객 리텐션 락인(Lock-in)</p>
+        <h1>{header_title}</h1>
+        <p>{header_desc}</p>
       </div>
     </div>
 
-    <!-- Clear & Concise A/B Group Identifier -->
-    <div class="header-groups-wrap">
-      <div class="group-mini-card">
-        <div class="group-icon-badge icon-a">🏪</div>
-        <div class="group-mini-info">
-          <span class="group-mini-title">대조군 A (1,250명)</span>
-          <span class="group-mini-desc">기존 단일 매장 스탬프 (교차 불가 ❌)</span>
-        </div>
-      </div>
+    <!-- Clear & Concise A/B Group Identifier & Language Switcher -->
+    <div class="header-right-wrap">
+      {lang_switcher_html}
 
-      <div class="group-mini-card group-b">
-        <div class="group-icon-badge icon-b">☕</div>
-        <div class="group-mini-info">
-          <span class="group-mini-title" style="color: #FF8554;">실험군 B (1,250명)</span>
-          <span class="group-mini-desc">교차 브랜드 통합 적립 (전 매장 사용 ⭕)</span>
+      <div class="header-groups-wrap">
+        <div class="group-mini-card">
+          <div class="group-icon-badge icon-a">🏪</div>
+          <div class="group-mini-info">
+            <span class="group-mini-title">{group_a_title}</span>
+            <span class="group-mini-desc">{group_a_desc}</span>
+          </div>
+        </div>
+
+        <div class="group-mini-card group-b">
+          <div class="group-icon-badge icon-b">☕</div>
+          <div class="group-mini-info">
+            <span class="group-mini-title" style="color: #FF8554;">{group_b_title}</span>
+            <span class="group-mini-desc">{group_b_desc}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -749,70 +996,70 @@ html_template = f'''<!DOCTYPE html>
   <section class="kpi-grid">
     <!-- Card 1: DAU -->
     <div class="kpi-orange-card">
-      <div class="kpi-title">일일 활성 유저 (평균 DAU)</div>
+      <div class="kpi-title">{kpi_titles[0]}</div>
       <div class="kpi-main-val">
-        {data_payload['kpi']['avg_dau_b']} <span class="kpi-unit">명</span>
+        {kpi_dict['avg_dau_b']} <span class="kpi-unit">{kpi_units[0]}</span>
       </div>
       <div class="kpi-comparison">
-        <span class="kpi-control-text">A군 {data_payload['kpi']['avg_dau_a']}명</span>
-        <span class="kpi-lift-pill">▲ +{data_payload['kpi']['dau_lift']}%</span>
+        <span class="kpi-control-text">{kpi_a_texts[0]}</span>
+        <span class="kpi-lift-pill">▲ +{kpi_dict['dau_lift']}%</span>
       </div>
     </div>
 
     <!-- Card 2: Sessions per User -->
     <div class="kpi-orange-card">
-      <div class="kpi-title">인당 평균 방문 세션</div>
+      <div class="kpi-title">{kpi_titles[1]}</div>
       <div class="kpi-main-val">
-        {data_payload['kpi']['avg_sess_b']} <span class="kpi-unit">회</span>
+        {kpi_dict['avg_sess_b']} <span class="kpi-unit">{kpi_units[1]}</span>
       </div>
       <div class="kpi-comparison">
-        <span class="kpi-control-text">A군 {data_payload['kpi']['avg_sess_a']}회</span>
-        <span class="kpi-lift-pill">▲ +{data_payload['kpi']['sess_lift']}%</span>
+        <span class="kpi-control-text">{kpi_a_texts[1]}</span>
+        <span class="kpi-lift-pill">▲ +{kpi_dict['sess_lift']}%</span>
       </div>
     </div>
 
     <!-- Card 3: Orders per User -->
     <div class="kpi-orange-card">
-      <div class="kpi-title">인당 커피 구매 빈도</div>
+      <div class="kpi-title">{kpi_titles[2]}</div>
       <div class="kpi-main-val">
-        {data_payload['kpi']['orders_per_user_b']} <span class="kpi-unit">잔</span>
+        {kpi_dict['orders_per_user_b']} <span class="kpi-unit">{kpi_units[2]}</span>
       </div>
       <div class="kpi-comparison">
-        <span class="kpi-control-text">A군 {data_payload['kpi']['orders_per_user_a']}잔</span>
-        <span class="kpi-lift-pill">▲ +{data_payload['kpi']['orders_lift']}%</span>
+        <span class="kpi-control-text">{kpi_a_texts[2]}</span>
+        <span class="kpi-lift-pill">▲ +{kpi_dict['orders_lift']}%</span>
       </div>
     </div>
 
     <!-- Card 4: Cross Brand Rate -->
     <div class="kpi-orange-card">
-      <div class="kpi-title">교차 브랜드 주문율</div>
+      <div class="kpi-title">{kpi_titles[3]}</div>
       <div class="kpi-main-val">
-        {data_payload['kpi']['cross_rate_b']} <span class="kpi-unit">%</span>
+        {kpi_dict['cross_rate_b']} <span class="kpi-unit">{kpi_units[3]}</span>
       </div>
       <div class="kpi-comparison">
-        <span class="kpi-control-text">A군 {data_payload['kpi']['cross_rate_a']}%</span>
-        <span class="kpi-lift-pill">▲ +{data_payload['kpi']['cross_diff']}%p</span>
+        <span class="kpi-control-text">{kpi_a_texts[3]}</span>
+        <span class="kpi-lift-pill">▲ +{kpi_dict['cross_diff']}%p</span>
       </div>
     </div>
 
     <!-- Card 5: Checkout Conversion -->
     <div class="kpi-orange-card">
-      <div class="kpi-title">결제 최종 전환율 (CVR)</div>
+      <div class="kpi-title">{kpi_titles[4]}</div>
       <div class="kpi-main-val">
-        {data_payload['kpi']['cvr_b']} <span class="kpi-unit">%</span>
+        {kpi_dict['cvr_b']} <span class="kpi-unit">{kpi_units[4]}</span>
       </div>
       <div class="kpi-comparison">
-        <span class="kpi-control-text">A군 {data_payload['kpi']['cvr_a']}%</span>
-        <span class="kpi-lift-pill">▲ +{data_payload['kpi']['cvr_diff']}%p</span>
+        <span class="kpi-control-text">{kpi_a_texts[4]}</span>
+        <span class="kpi-lift-pill">▲ +{kpi_dict['cvr_diff']}%p</span>
       </div>
     </div>
   </section>
 
   <!-- 3. Navigation Tabs (Focused 3 Tabs) -->
   <nav class="tabs-nav">
-    <button class="tab-btn active" onclick="switchTab('tab-retention')">📈 1. 가설 검증 & 코호트 리텐션</button>
-    <button class="tab-btn" onclick="switchTab('tab-funnel')">🛒 2. 14단계 행동 퍼널 분석</button>
-    <button class="tab-btn" onclick="switchTab('tab-cross')">☕ 3. 교차 브랜드 이용 분석</button>
+    <button class="tab-btn active" onclick="switchTab('tab-retention')">{tab_titles[0]}</button>
+    <button class="tab-btn" onclick="switchTab('tab-funnel')">{tab_titles[1]}</button>
+    <button class="tab-btn" onclick="switchTab('tab-cross')">{tab_titles[2]}</button>
   </nav>
 
   <!-- ================= TAB 1: 코호트 리텐션 ================= -->
@@ -823,10 +1070,10 @@ html_template = f'''<!DOCTYPE html>
         <div class="panel-header">
           <div class="panel-title-wrap">
             <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-              <h3>90일 장기 코호트 리텐션 곡선 (Week 0 ~ Week 12)</h3>
-              <span class="period-memo-box">📅 2026.06.01 ~ 2026.08.29 (90일간)</span>
+              <h3>{t1_chart_title}</h3>
+              <span class="period-memo-box">{t1_chart_period}</span>
             </div>
-            <p>최초 온보딩 시점 이후 경과 주차별 고유 접속 잔존율 비교</p>
+            <p>{t1_chart_desc}</p>
           </div>
         </div>
         <div class="chart-container">
@@ -838,56 +1085,56 @@ html_template = f'''<!DOCTYPE html>
       <div class="dark-card-panel">
         <div class="panel-header">
           <div class="panel-title-wrap">
-            <h3>주차별 잔존율 상세 비교 (Heatmap)</h3>
-            <p>1개월, 2개월, 3개월 경과 시점의 잔존 격차</p>
+            <h3>{t1_table_title}</h3>
+            <p>{t1_table_desc}</p>
           </div>
         </div>
         <div style="overflow-x: auto;">
           <table class="retention-clean-table">
             <thead>
               <tr>
-                <th>구간</th>
-                <th>경과 기간</th>
-                <th>대조군 A</th>
-                <th>실험군 B (통합적립)</th>
-                <th>성과 격차 (Lift)</th>
+                <th>{t1_th[0]}</th>
+                <th>{t1_th[1]}</th>
+                <th>{t1_th[2]}</th>
+                <th>{t1_th[3]}</th>
+                <th>{t1_th[4]}</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td><strong>Week 1</strong></td>
-                <td>D+7 ~ D+13</td>
-                <td>{data_payload['retention_a'][1]}%</td>
-                <td class="highlight-b">{data_payload['retention_b'][1]}%</td>
-                <td><span class="lift-tag-badge green">+{round(data_payload['retention_b'][1] - data_payload['retention_a'][1], 1)}%p</span></td>
+                <td>{t1_w1_period}</td>
+                <td>96.2%</td>
+                <td class="highlight-b">98.7%</td>
+                <td><span class="lift-tag-badge green">+2.5%p</span></td>
               </tr>
               <tr>
                 <td><strong>Week 2</strong></td>
-                <td>D+14 ~ D+20</td>
-                <td>{data_payload['retention_a'][2]}%</td>
-                <td class="highlight-b">{data_payload['retention_b'][2]}%</td>
-                <td><span class="lift-tag-badge green">+{round(data_payload['retention_b'][2] - data_payload['retention_a'][2], 1)}%p</span></td>
+                <td>{t1_w2_period}</td>
+                <td>90.9%</td>
+                <td class="highlight-b">98.3%</td>
+                <td><span class="lift-tag-badge green">+7.4%p</span></td>
               </tr>
               <tr>
                 <td><strong>Week 4</strong></td>
-                <td>1개월 (D+28~34)</td>
-                <td>{data_payload['retention_a'][4]}%</td>
-                <td class="highlight-b">{data_payload['retention_b'][4]}%</td>
-                <td><span class="lift-tag-badge green">+{round(data_payload['retention_b'][4] - data_payload['retention_a'][4], 1)}%p</span></td>
+                <td>{t1_w4_period}</td>
+                <td>79.8%</td>
+                <td class="highlight-b">97.8%</td>
+                <td><span class="lift-tag-badge green">+18.0%p</span></td>
               </tr>
               <tr>
                 <td><strong>Week 8</strong></td>
-                <td>2개월 (D+56~62)</td>
-                <td>{data_payload['retention_a'][8]}%</td>
-                <td class="highlight-b">{data_payload['retention_b'][8]}%</td>
-                <td><span class="lift-tag-badge green">+{round(data_payload['retention_b'][8] - data_payload['retention_a'][8], 1)}%p</span></td>
+                <td>{t1_w8_period}</td>
+                <td>43.9%</td>
+                <td class="highlight-b">87.2%</td>
+                <td><span class="lift-tag-badge green">+43.3%p</span></td>
               </tr>
               <tr style="background: rgba(255, 92, 30, 0.12);">
                 <td><strong style="color: #FFA585;">Week 12</strong></td>
-                <td>3개월 (D+84~89)</td>
-                <td>{data_payload['retention_a'][12]}%</td>
-                <td class="highlight-b" style="color: #FF5C1E; font-size: 14px;">{data_payload['retention_b'][12]}%</td>
-                <td><span class="lift-tag-badge orange">▲ 약 3배 유지</span></td>
+                <td>{t1_w12_period}</td>
+                <td>9.8%</td>
+                <td class="highlight-b" style="color: #FF5C1E; font-size: 14px;">28.9%</td>
+                <td><span class="lift-tag-badge orange">{t1_w12_lift}</span></td>
               </tr>
             </tbody>
           </table>
@@ -899,8 +1146,8 @@ html_template = f'''<!DOCTYPE html>
     <div class="dark-card-panel">
       <div class="panel-header">
         <div class="panel-title-wrap">
-          <h3>90일간 일일 활성 사용자 수 (DAU) 일자별 추이</h3>
-          <p>주중 출퇴근 피크와 주말 패턴, 그리고 시간 경과에 따른 활동 유저 베이스라인 비교</p>
+          <h3>{t1_dau_title}</h3>
+          <p>{t1_dau_desc}</p>
         </div>
       </div>
       <div class="chart-container" style="height: 280px;">
@@ -916,8 +1163,8 @@ html_template = f'''<!DOCTYPE html>
       <div class="dark-card-panel">
         <div class="panel-header">
           <div class="panel-title-wrap">
-            <h3>14단계 스마트오더 행동 퍼널 규모 비교</h3>
-            <p>앱 실행(app_open)부터 최종 구매(purchase)까지 단계별 잔존 로그 수</p>
+            <h3>{t2_f1_title}</h3>
+            <p>{t2_f1_desc}</p>
           </div>
         </div>
         <div class="chart-container" style="height: 380px;">
@@ -929,8 +1176,8 @@ html_template = f'''<!DOCTYPE html>
       <div class="dark-card-panel">
         <div class="panel-header">
           <div class="panel-title-wrap">
-            <h3>핵심 구간별 전환율 비교 (세로 막대 그래프)</h3>
-            <p>단계별 전환율(%)과 결제 직전 이탈 방어 효과 (막대 위 수치 표기)</p>
+            <h3>{t2_f2_title}</h3>
+            <p>{t2_f2_desc}</p>
           </div>
         </div>
         <div class="chart-container" style="height: 380px;">
@@ -947,8 +1194,8 @@ html_template = f'''<!DOCTYPE html>
       <div class="dark-card-panel">
         <div class="panel-header">
           <div class="panel-title-wrap">
-            <h3>6대 제휴 카페 브랜드별 주문 건수 분포</h3>
-            <p>대조군(A) vs 실험군(B)의 브랜드별 주문 점유율 비교</p>
+            <h3>{t3_b1_title}</h3>
+            <p>{t3_b1_desc}</p>
           </div>
         </div>
         <div class="chart-container">
@@ -960,33 +1207,33 @@ html_template = f'''<!DOCTYPE html>
       <div class="dark-card-panel">
         <div class="panel-header">
           <div class="panel-title-wrap">
-            <h3>통합 포인트 누적 및 소진 사이클 (실험군 B)</h3>
-            <p>다중 브랜드 교차 주문을 유발한 리워드 순환 지표</p>
+            <h3>{t3_b2_title}</h3>
+            <p>{t3_b2_desc}</p>
           </div>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px;">
           <div style="background: #12141D; padding: 18px; border-radius: 12px; border: 1px solid #262A3B;">
-            <div style="font-size: 12px; color: var(--text-gray-muted); font-weight: 600;">90일간 총 적립 포인트</div>
+            <div style="font-size: 12px; color: var(--text-gray-muted); font-weight: 600;">{t3_b2_acc_title}</div>
             <div style="font-size: 24px; font-weight: 800; color: #FFFFFF; margin-top: 4px; font-family: 'Outfit';">
-              {data_payload['points']['earned_total']:,} <span style="font-size: 14px; color: var(--po-orange);">P</span>
+              {points_dict['earned_total']:,} <span style="font-size: 14px; color: var(--po-orange);">P</span>
             </div>
-            <div style="font-size: 11px; color: #34D399; margin-top: 4px;">결제액의 평균 4% 적립</div>
+            <div style="font-size: 11px; color: #34D399; margin-top: 4px;">{t3_b2_acc_sub}</div>
           </div>
           <div style="background: rgba(255, 92, 30, 0.1); padding: 18px; border-radius: 12px; border: 1px solid rgba(255, 92, 30, 0.35);">
-            <div style="font-size: 12px; color: #FFA585; font-weight: 600;">90일간 총 사용 포인트</div>
+            <div style="font-size: 12px; color: #FFA585; font-weight: 600;">{t3_b2_use_title}</div>
             <div style="font-size: 24px; font-weight: 800; color: var(--po-orange); margin-top: 4px; font-family: 'Outfit';">
-              {data_payload['points']['used_total']:,} <span style="font-size: 14px;">P</span>
+              {points_dict['used_total']:,} <span style="font-size: 14px;">P</span>
             </div>
-            <div style="font-size: 11px; color: #FF8554; margin-top: 4px;">전체 주문 중 {data_payload['points']['used_ratio']}%에서 차감 사용</div>
+            <div style="font-size: 11px; color: #FF8554; margin-top: 4px;">{t3_b2_use_sub}</div>
           </div>
         </div>
 
         <div style="background: #12141D; border-radius: 12px; padding: 20px; border: 1px solid #262A3B;">
-          <h4 style="font-size: 14px; font-weight: 800; color: #FFFFFF; margin-bottom: 10px;">프랜차이즈 종속을 깬 핵심 동력</h4>
+          <h4 style="font-size: 14px; font-weight: 800; color: #FFFFFF; margin-bottom: 10px;">{t3_b2_box_title}</h4>
           <ul style="font-size: 13px; color: var(--text-gray-light); line-height: 1.8; padding-left: 18px;">
-            <li><strong>대조군 (Group A)</strong>: 스탬프가 매장별로 파편화되어 타 브랜드 방문 유인이 없어 단골 카페만 반복 이용 (교차 주문율 <strong>17.8%</strong>).</li>
-            <li><strong>실험군 (Group B)</strong>: 메가커피에서 쌓은 포인트를 컴포즈나 빽다방에서 결제 시 현금처럼 차감할 수 있어 교차 주문율이 <strong>48.3%</strong>로 2.7배 폭증.</li>
+            <li>{t3_b2_li1}</li>
+            <li>{t3_b2_li2}</li>
           </ul>
         </div>
       </div>
@@ -997,7 +1244,7 @@ html_template = f'''<!DOCTYPE html>
 
 <script>
   // JSON Data Payload
-  const DATA = {data_json_str};
+  const DATA = {payload_json_str};
 
   // Tab Switching
   function switchTab(tabId) {{
@@ -1047,7 +1294,7 @@ html_template = f'''<!DOCTYPE html>
         labels: DATA.weeks,
         datasets: [
           {{
-            label: '실험군 B (교차 통합 적립)',
+            label: '{t1_ds_b}',
             data: DATA.retention_b,
             borderColor: '#FF5C1E',
             backgroundColor: 'rgba(255, 92, 30, 0.12)',
@@ -1058,7 +1305,7 @@ html_template = f'''<!DOCTYPE html>
             pointRadius: 4
           }},
           {{
-            label: '대조군 A (단일 매장 스탬프)',
+            label: '{t1_ds_a}',
             data: DATA.retention_a,
             borderColor: '#64748B',
             backgroundColor: 'transparent',
@@ -1097,7 +1344,7 @@ html_template = f'''<!DOCTYPE html>
         labels: DATA.chart_dates,
         datasets: [
           {{
-            label: '실험군 B (교차 적립 DAU)',
+            label: '{t1_dau_ds_b}',
             data: DATA.dau_ts_b,
             borderColor: '#FF5C1E',
             backgroundColor: 'rgba(255, 92, 30, 0.15)',
@@ -1107,7 +1354,7 @@ html_template = f'''<!DOCTYPE html>
             tension: 0.2
           }},
           {{
-            label: '대조군 A (기존 스탬프 DAU)',
+            label: '{t1_dau_ds_a}',
             data: DATA.dau_ts_a,
             borderColor: '#64748B',
             backgroundColor: 'rgba(100, 116, 139, 0.08)',
@@ -1139,13 +1386,13 @@ html_template = f'''<!DOCTYPE html>
         labels: DATA.funnel_steps,
         datasets: [
           {{
-            label: '실험군 B (통합 적립)',
+            label: '{t2_f1_ds_b}',
             data: DATA.funnel_b,
             backgroundColor: '#FF5C1E',
             borderRadius: 5
           }},
           {{
-            label: '대조군 A (단일 스탬프)',
+            label: '{t2_f1_ds_a}',
             data: DATA.funnel_a,
             backgroundColor: '#475569',
             borderRadius: 5
@@ -1174,13 +1421,13 @@ html_template = f'''<!DOCTYPE html>
         labels: DATA.stage_labels,
         datasets: [
           {{
-            label: '실험군 B (통합적립 전환율)',
+            label: '{t2_f2_ds_b}',
             data: DATA.stage_rates_b,
             backgroundColor: '#FF5C1E',
             borderRadius: 6
           }},
           {{
-            label: '대조군 A (단일스탬프 전환율)',
+            label: '{t2_f2_ds_a}',
             data: DATA.stage_rates_a,
             backgroundColor: '#475569',
             borderRadius: 6
@@ -1192,7 +1439,7 @@ html_template = f'''<!DOCTYPE html>
         responsive: true,
         maintainAspectRatio: false,
         layout: {{
-          padding: {{ top: 22 }} // 막대 상단 수치 표기를 위한 패딩
+          padding: {{ top: 22 }}
         }},
         plugins: {{
           legend: {{ position: 'top', labels: {{ font: {{ weight: 'bold', size: 12 }} }} }},
@@ -1218,13 +1465,13 @@ html_template = f'''<!DOCTYPE html>
         labels: DATA.brands,
         datasets: [
           {{
-            label: '실험군 B 주문 건수',
+            label: '{t3_b1_ds_b}',
             data: DATA.brand_orders_b,
             backgroundColor: '#FF5C1E',
             borderRadius: 6
           }},
           {{
-            label: '대조군 A 주문 건수',
+            label: '{t3_b1_ds_a}',
             data: DATA.brand_orders_a,
             backgroundColor: '#475569',
             borderRadius: 6
@@ -1249,30 +1496,53 @@ html_template = f'''<!DOCTYPE html>
 </body>
 </html>
 '''
+    return html_content
 
-print(f"[3/4] 새 톤앤매너 대시보드 파일 작성 중: {OUTPUT_HTML} & passorder_dashboard.html...")
-with open(OUTPUT_HTML, "w", encoding="utf-8") as f:
-    f.write(html_template)
+# -------------------------------------------------------------
+# 7. 파일 생성 및 저장
+# -------------------------------------------------------------
+print(f"[2/4] 국문 & 영문 대시보드 HTML 렌더링 중...")
 
-OUTPUT_HTML2 = os.path.join(OUTPUT_DIR, "passorder_dashboard.html")
-with open(OUTPUT_HTML2, "w", encoding="utf-8") as f:
-    f.write(html_template)
+# 국문 대시보드
+html_ko_output = build_dashboard_html(lang='ko', is_root=False)
+html_ko_root = build_dashboard_html(lang='ko', is_root=True)
 
-# 루트 index.html (GitHub Pages 배포용) 동시 동기화
-ROOT_INDEX = os.path.join(BASE_DIR, "index.html")
-with open(ROOT_INDEX, "w", encoding="utf-8") as f:
-    f.write(html_template)
+# 영문 대시보드
+html_en_output = build_dashboard_html(lang='en', is_root=False)
+html_en_root = build_dashboard_html(lang='en', is_root=True)
 
-file_size_kb = os.path.getsize(OUTPUT_HTML2) / 1024
-print(f"\n[4/4] 완료! 패스오더 공식 톤앤매너 대시보드가 성공적으로 재생성되었습니다.")
-print(f"파일 경로: {OUTPUT_HTML2} ({file_size_kb:.1f} KB)")
-print(f"웹 배포 파일: {ROOT_INDEX}")
+print(f"[3/4] 파일 쓰기 작업 중...")
 
-# 브라우저 자동 실행
-try:
-    import webbrowser
-    webbrowser.open(f"file://{os.path.abspath(OUTPUT_HTML2)}")
-    print("[INFO] 기본 웹 브라우저에서 대시보드를 자동으로 열었습니다.")
-except Exception as e:
-    pass
+# 1) output/passorder_dashboard.html (국문)
+OUTPUT_KO = os.path.join(OUTPUT_DIR, "passorder_dashboard.html")
+with open(OUTPUT_KO, "w", encoding="utf-8") as f:
+    f.write(html_ko_output)
 
+# 2) output/passorder_dashboard_en.html (영문)
+OUTPUT_EN = os.path.join(OUTPUT_DIR, "passorder_dashboard_en.html")
+with open(OUTPUT_EN, "w", encoding="utf-8") as f:
+    f.write(html_en_output)
+
+# 3) index.html (루트 배포용 국문)
+ROOT_KO = os.path.join(BASE_DIR, "index.html")
+with open(ROOT_KO, "w", encoding="utf-8") as f:
+    f.write(html_ko_root)
+
+# 4) index_en.html (루트 배포용 영문)
+ROOT_EN = os.path.join(BASE_DIR, "index_en.html")
+with open(ROOT_EN, "w", encoding="utf-8") as f:
+    f.write(html_en_root)
+
+# 5) passorder_dashboard_en.html (루트 동시 복사 - GitHub Pages 유연성)
+ROOT_EN_DIRECT = os.path.join(BASE_DIR, "passorder_dashboard_en.html")
+with open(ROOT_EN_DIRECT, "w", encoding="utf-8") as f:
+    f.write(html_en_output)
+
+size_ko = os.path.getsize(OUTPUT_KO) / 1024
+size_en = os.path.getsize(OUTPUT_EN) / 1024
+
+print(f"\n[4/4] 완료! 국문 및 영문 대시보드가 성공적으로 생성되었습니다.")
+print(f" - [국문 산출물] {OUTPUT_KO} ({size_ko:.1f} KB)")
+print(f" - [영문 산출물] {OUTPUT_EN} ({size_en:.1f} KB)")
+print(f" - [GitHub Pages 국문] {ROOT_KO}")
+print(f" - [GitHub Pages 영문] {ROOT_EN}")

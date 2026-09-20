@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>패스오더 교차 브랜드 통합 적립 A/B 테스트 성과 대시보드</title>
+  <title>Pass Order Cross-Brand Unified Rewards A/B Test Dashboard</title>
   
   <!-- Pretendard & Outfit Fonts -->
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
@@ -536,11 +536,11 @@
     <div class="header-brand-wrap">
       <!-- Official Logo -->
       <div class="po-official-logo">
-        <span class="po-logo-pass">패스</span><span class="po-logo-order">오더</span>
+        <span class="po-logo-pass">PASS</span><span class="po-logo-order">ORDER</span>
       </div>
       <div class="header-text-block">
-        <h1>교차 브랜드 통합 적립 90일 A/B 테스트 대시보드</h1>
-        <p>가설 검증: 프랜차이즈 커피 자체 앱 종속 방어 및 전 매장 통합 리워드를 통한 고객 리텐션 락인(Lock-in)</p>
+        <h1>Cross-Brand Unified Rewards 90-Day A/B Test Dashboard</h1>
+        <p>Hypothesis Validation: Halting Churn to Franchise-Owned Apps & Driving Customer Retention Lock-In via Universal Loyalty Points</p>
       </div>
     </div>
 
@@ -548,8 +548,8 @@
     <div class="header-right-wrap">
       
         <div class="lang-switcher">
-          <span class="lang-btn active">🇰🇷 한국어</span>
-          <a href="passorder_dashboard_en.html" class="lang-btn">🇺🇸 English</a>
+          <a href="index.html" class="lang-btn">🇰🇷 한국어</a>
+          <span class="lang-btn active">🇺🇸 English</span>
         </div>
         
 
@@ -557,16 +557,16 @@
         <div class="group-mini-card">
           <div class="group-icon-badge icon-a">🏪</div>
           <div class="group-mini-info">
-            <span class="group-mini-title">대조군 A (1,250명)</span>
-            <span class="group-mini-desc">기존 단일 매장 스탬프 (교차 불가 ❌)</span>
+            <span class="group-mini-title">Control Group A (1,250)</span>
+            <span class="group-mini-desc">Legacy Store-Isolated Stamps (No Cross-Use ❌)</span>
           </div>
         </div>
 
         <div class="group-mini-card group-b">
           <div class="group-icon-badge icon-b">☕</div>
           <div class="group-mini-info">
-            <span class="group-mini-title" style="color: #FF8554;">실험군 B (1,250명)</span>
-            <span class="group-mini-desc">교차 브랜드 통합 적립 (전 매장 사용 ⭕)</span>
+            <span class="group-mini-title" style="color: #FF8554;">Treatment Group B (1,250)</span>
+            <span class="group-mini-desc">Cross-Brand Unified Rewards (Universal ⭕)</span>
           </div>
         </div>
       </div>
@@ -577,60 +577,60 @@
   <section class="kpi-grid">
     <!-- Card 1: DAU -->
     <div class="kpi-orange-card">
-      <div class="kpi-title">일일 활성 유저 (평균 DAU)</div>
+      <div class="kpi-title">Average DAU (Daily Active Users)</div>
       <div class="kpi-main-val">
-        461.2 <span class="kpi-unit">명</span>
+        461.2 <span class="kpi-unit">users</span>
       </div>
       <div class="kpi-comparison">
-        <span class="kpi-control-text">A군 232.7명</span>
+        <span class="kpi-control-text">Control A: 232.7 users</span>
         <span class="kpi-lift-pill">▲ +98.2%</span>
       </div>
     </div>
 
     <!-- Card 2: Sessions per User -->
     <div class="kpi-orange-card">
-      <div class="kpi-title">인당 평균 방문 세션</div>
+      <div class="kpi-title">Sessions per User</div>
       <div class="kpi-main-val">
-        38.2 <span class="kpi-unit">회</span>
+        38.2 <span class="kpi-unit">sessions</span>
       </div>
       <div class="kpi-comparison">
-        <span class="kpi-control-text">A군 19.4회</span>
+        <span class="kpi-control-text">Control A: 19.4 sess</span>
         <span class="kpi-lift-pill">▲ +97.4%</span>
       </div>
     </div>
 
     <!-- Card 3: Orders per User -->
     <div class="kpi-orange-card">
-      <div class="kpi-title">인당 커피 구매 빈도</div>
+      <div class="kpi-title">Orders per User</div>
       <div class="kpi-main-val">
-        22.7 <span class="kpi-unit">잔</span>
+        22.7 <span class="kpi-unit">orders</span>
       </div>
       <div class="kpi-comparison">
-        <span class="kpi-control-text">A군 10.4잔</span>
+        <span class="kpi-control-text">Control A: 10.4 orders</span>
         <span class="kpi-lift-pill">▲ +118.8%</span>
       </div>
     </div>
 
     <!-- Card 4: Cross Brand Rate -->
     <div class="kpi-orange-card">
-      <div class="kpi-title">교차 브랜드 주문율</div>
+      <div class="kpi-title">Cross-Brand Ordering Rate</div>
       <div class="kpi-main-val">
         48.3 <span class="kpi-unit">%</span>
       </div>
       <div class="kpi-comparison">
-        <span class="kpi-control-text">A군 17.8%</span>
+        <span class="kpi-control-text">Control A: 17.8%</span>
         <span class="kpi-lift-pill">▲ +30.4%p</span>
       </div>
     </div>
 
     <!-- Card 5: Checkout Conversion -->
     <div class="kpi-orange-card">
-      <div class="kpi-title">결제 최종 전환율 (CVR)</div>
+      <div class="kpi-title">Checkout Conversion Rate (CVR)</div>
       <div class="kpi-main-val">
         90.8 <span class="kpi-unit">%</span>
       </div>
       <div class="kpi-comparison">
-        <span class="kpi-control-text">A군 81.5%</span>
+        <span class="kpi-control-text">Control A: 81.5%</span>
         <span class="kpi-lift-pill">▲ +9.3%p</span>
       </div>
     </div>
@@ -638,9 +638,9 @@
 
   <!-- 3. Navigation Tabs (Focused 3 Tabs) -->
   <nav class="tabs-nav">
-    <button class="tab-btn active" onclick="switchTab('tab-retention')">📈 1. 가설 검증 & 코호트 리텐션</button>
-    <button class="tab-btn" onclick="switchTab('tab-funnel')">🛒 2. 14단계 행동 퍼널 분석</button>
-    <button class="tab-btn" onclick="switchTab('tab-cross')">☕ 3. 교차 브랜드 이용 분석</button>
+    <button class="tab-btn active" onclick="switchTab('tab-retention')">📈 1. Hypothesis Testing & Cohort Retention</button>
+    <button class="tab-btn" onclick="switchTab('tab-funnel')">🛒 2. 14-Step Behavioral Funnel</button>
+    <button class="tab-btn" onclick="switchTab('tab-cross')">☕ 3. Cross-Brand Ecosystem Analysis</button>
   </nav>
 
   <!-- ================= TAB 1: 코호트 리텐션 ================= -->
@@ -651,10 +651,10 @@
         <div class="panel-header">
           <div class="panel-title-wrap">
             <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-              <h3>90일 장기 코호트 리텐션 곡선 (Week 0 ~ Week 12)</h3>
-              <span class="period-memo-box">📅 2026.06.01 ~ 2026.08.29 (90일간)</span>
+              <h3>90-Day Longitudinal Cohort Retention Curve (Week 0 ~ Week 12)</h3>
+              <span class="period-memo-box">📅 2026.06.01 ~ 2026.08.29 (90 Days)</span>
             </div>
-            <p>최초 온보딩 시점 이후 경과 주차별 고유 접속 잔존율 비교</p>
+            <p>Weekly unique active retention comparison following initial onboarding</p>
           </div>
         </div>
         <div class="chart-container">
@@ -666,19 +666,19 @@
       <div class="dark-card-panel">
         <div class="panel-header">
           <div class="panel-title-wrap">
-            <h3>주차별 잔존율 상세 비교 (Heatmap)</h3>
-            <p>1개월, 2개월, 3개월 경과 시점의 잔존 격차</p>
+            <h3>Weekly Retention Matrix (Heatmap)</h3>
+            <p>Retention gaps at 1-month, 2-month, and 3-month milestones</p>
           </div>
         </div>
         <div style="overflow-x: auto;">
           <table class="retention-clean-table">
             <thead>
               <tr>
-                <th>구간</th>
-                <th>경과 기간</th>
-                <th>대조군 A</th>
-                <th>실험군 B (통합적립)</th>
-                <th>성과 격차 (Lift)</th>
+                <th>Cohort</th>
+                <th>Elapsed Period</th>
+                <th>Control A</th>
+                <th>Treatment B (Unified)</th>
+                <th>Lift Delta</th>
               </tr>
             </thead>
             <tbody>
@@ -698,24 +698,24 @@
               </tr>
               <tr>
                 <td><strong>Week 4</strong></td>
-                <td>1개월 (D+28~34)</td>
+                <td>1 Month (D+28~34)</td>
                 <td>79.8%</td>
                 <td class="highlight-b">97.8%</td>
                 <td><span class="lift-tag-badge green">+18.0%p</span></td>
               </tr>
               <tr>
                 <td><strong>Week 8</strong></td>
-                <td>2개월 (D+56~62)</td>
+                <td>2 Months (D+56~62)</td>
                 <td>43.9%</td>
                 <td class="highlight-b">87.2%</td>
                 <td><span class="lift-tag-badge green">+43.3%p</span></td>
               </tr>
               <tr style="background: rgba(255, 92, 30, 0.12);">
                 <td><strong style="color: #FFA585;">Week 12</strong></td>
-                <td>3개월 (D+84~89)</td>
+                <td>3 Months (D+84~89)</td>
                 <td>9.8%</td>
                 <td class="highlight-b" style="color: #FF5C1E; font-size: 14px;">28.9%</td>
-                <td><span class="lift-tag-badge orange">▲ 약 3배 유지</span></td>
+                <td><span class="lift-tag-badge orange">▲ ~3x Retention Preserved</span></td>
               </tr>
             </tbody>
           </table>
@@ -727,8 +727,8 @@
     <div class="dark-card-panel">
       <div class="panel-header">
         <div class="panel-title-wrap">
-          <h3>90일간 일일 활성 사용자 수 (DAU) 일자별 추이</h3>
-          <p>주중 출퇴근 피크와 주말 패턴, 그리고 시간 경과에 따른 활동 유저 베이스라인 비교</p>
+          <h3>90-Day Daily Active Users (DAU) Time-Series Trajectory</h3>
+          <p>Weekday commute peaks, weekend dips, and long-term active user baseline divergence</p>
         </div>
       </div>
       <div class="chart-container" style="height: 280px;">
@@ -744,8 +744,8 @@
       <div class="dark-card-panel">
         <div class="panel-header">
           <div class="panel-title-wrap">
-            <h3>14단계 스마트오더 행동 퍼널 규모 비교</h3>
-            <p>앱 실행(app_open)부터 최종 구매(purchase)까지 단계별 잔존 로그 수</p>
+            <h3>14-Step Smart Order Behavioral Funnel Volume Comparison</h3>
+            <p>Retained event volume from app launch (app_open) to final checkout (purchase)</p>
           </div>
         </div>
         <div class="chart-container" style="height: 380px;">
@@ -757,8 +757,8 @@
       <div class="dark-card-panel">
         <div class="panel-header">
           <div class="panel-title-wrap">
-            <h3>핵심 구간별 전환율 비교 (세로 막대 그래프)</h3>
-            <p>단계별 전환율(%)과 결제 직전 이탈 방어 효과 (막대 위 수치 표기)</p>
+            <h3>Key Stage Conversion Rates (Vertical Bar Chart)</h3>
+            <p>Stage-by-stage CVR (%) and checkout drop-off defense (values displayed atop bars)</p>
           </div>
         </div>
         <div class="chart-container" style="height: 380px;">
@@ -775,8 +775,8 @@
       <div class="dark-card-panel">
         <div class="panel-header">
           <div class="panel-title-wrap">
-            <h3>6대 제휴 카페 브랜드별 주문 건수 분포</h3>
-            <p>대조군(A) vs 실험군(B)의 브랜드별 주문 점유율 비교</p>
+            <h3>Order Volume Distribution Across 6 Partner Cafe Brands</h3>
+            <p>Order share comparison between Control Group (A) and Treatment Group (B)</p>
           </div>
         </div>
         <div class="chart-container">
@@ -788,33 +788,33 @@
       <div class="dark-card-panel">
         <div class="panel-header">
           <div class="panel-title-wrap">
-            <h3>통합 포인트 누적 및 소진 사이클 (실험군 B)</h3>
-            <p>다중 브랜드 교차 주문을 유발한 리워드 순환 지표</p>
+            <h3>Universal Point Accrual & Redemption Velocity (Treatment B)</h3>
+            <p>Key loyalty turnover metrics driving cross-brand ordering</p>
           </div>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px;">
           <div style="background: #12141D; padding: 18px; border-radius: 12px; border: 1px solid #262A3B;">
-            <div style="font-size: 12px; color: var(--text-gray-muted); font-weight: 600;">90일간 총 적립 포인트</div>
+            <div style="font-size: 12px; color: var(--text-gray-muted); font-weight: 600;">Total Points Accrued (90 Days)</div>
             <div style="font-size: 24px; font-weight: 800; color: #FFFFFF; margin-top: 4px; font-family: 'Outfit';">
               2,990,110 <span style="font-size: 14px; color: var(--po-orange);">P</span>
             </div>
-            <div style="font-size: 11px; color: #34D399; margin-top: 4px;">결제액의 평균 4% 적립</div>
+            <div style="font-size: 11px; color: #34D399; margin-top: 4px;">Avg. 4% earned on order value</div>
           </div>
           <div style="background: rgba(255, 92, 30, 0.1); padding: 18px; border-radius: 12px; border: 1px solid rgba(255, 92, 30, 0.35);">
-            <div style="font-size: 12px; color: #FFA585; font-weight: 600;">90일간 총 사용 포인트</div>
+            <div style="font-size: 12px; color: #FFA585; font-weight: 600;">Total Points Redeemed (90 Days)</div>
             <div style="font-size: 24px; font-weight: 800; color: var(--po-orange); margin-top: 4px; font-family: 'Outfit';">
               2,487,000 <span style="font-size: 14px;">P</span>
             </div>
-            <div style="font-size: 11px; color: #FF8554; margin-top: 4px;">전체 주문 중 17.2%에서 차감 사용</div>
+            <div style="font-size: 11px; color: #FF8554; margin-top: 4px;">Redeemed in 17.2% of total orders</div>
           </div>
         </div>
 
         <div style="background: #12141D; border-radius: 12px; padding: 20px; border: 1px solid #262A3B;">
-          <h4 style="font-size: 14px; font-weight: 800; color: #FFFFFF; margin-bottom: 10px;">프랜차이즈 종속을 깬 핵심 동력</h4>
+          <h4 style="font-size: 14px; font-weight: 800; color: #FFFFFF; margin-bottom: 10px;">Key Drivers Dismantling Franchise Lock-In</h4>
           <ul style="font-size: 13px; color: var(--text-gray-light); line-height: 1.8; padding-left: 18px;">
-            <li><strong>대조군 (Group A)</strong>: 스탬프가 매장별로 파편화되어 타 브랜드 방문 유인이 없어 단골 카페만 반복 이용 (교차 주문율 <strong>17.8%</strong>).</li>
-            <li><strong>실험군 (Group B)</strong>: 메가커피에서 쌓은 포인트를 컴포즈나 빽다방에서 결제 시 현금처럼 차감할 수 있어 교차 주문율이 <strong>48.3%</strong>로 2.7배 폭증.</li>
+            <li><strong>Control Group (Group A)</strong>: Stamps were fragmented by store, offering zero incentive to explore alternative brands, leading users to patronize only single local stores (Cross-brand order rate: <strong>17.8%</strong>).</li>
+            <li><strong>Treatment Group (Group B)</strong>: Points earned at Mega Coffee could be immediately deducted like cash at Compose or Paik's Coffee, surging the cross-brand order rate to <strong>48.3%</strong> (2.7x lift).</li>
           </ul>
         </div>
       </div>
@@ -825,7 +825,7 @@
 
 <script>
   // JSON Data Payload
-  const DATA = {"kpi": {"avg_dau_a": 232.7, "avg_dau_b": 461.2, "dau_lift": 98.2, "avg_sess_a": 19.4, "avg_sess_b": 38.2, "sess_lift": 97.4, "orders_per_user_a": 10.4, "orders_per_user_b": 22.7, "orders_lift": 118.8, "cross_rate_a": 17.8, "cross_rate_b": 48.3, "cross_diff": 30.4, "cvr_a": 81.5, "cvr_b": 90.8, "cvr_diff": 9.3, "orders_a": 12965, "orders_b": 28373}, "chart_dates": ["2026-01-06", "2026-01-07", "2026-01-08", "2026-02-06", "2026-02-07", "2026-02-08", "2026-03-06", "2026-03-07", "2026-03-08", "2026-04-06", "2026-04-07", "2026-04-08", "2026-05-06", "2026-05-07", "2026-05-08", "2026-06-06", "2026-06-07", "2026-06-08", "2026-06-13", "2026-06-14", "2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18", "2026-06-19", "2026-06-20", "2026-06-21", "2026-06-22", "2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26", "2026-06-27", "2026-06-28", "2026-06-29", "2026-06-30", "2026-07-06", "2026-07-07", "2026-07-08", "2026-07-13", "2026-07-14", "2026-07-15", "2026-07-16", "2026-07-17", "2026-07-18", "2026-07-19", "2026-07-20", "2026-07-21", "2026-07-22", "2026-07-23", "2026-07-24", "2026-07-25", "2026-07-26", "2026-07-27", "2026-07-28", "2026-07-29", "2026-07-30", "2026-07-31", "2026-08-06", "2026-08-07", "2026-08-08", "2026-08-13", "2026-08-14", "2026-08-15", "2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22", "2026-08-23", "2026-08-24", "2026-08-25", "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-29", "2026-09-06", "2026-09-07", "2026-09-08", "2026-10-06", "2026-10-07", "2026-10-08", "2026-11-06", "2026-11-07", "2026-11-08", "2026-12-06", "2026-12-07", "2026-12-08"], "dau_ts_a": [78, 381, 71, 152, 359, 74, 218, 359, 154, 291, 162, 154, 360, 171, 146, 206, 359, 132, 240, 240, 460, 487, 481, 468, 447, 197, 217, 468, 414, 428, 424, 423, 189, 166, 373, 364, 252, 351, 149, 319, 319, 311, 286, 283, 114, 116, 252, 252, 237, 231, 228, 102, 83, 200, 213, 187, 201, 172, 487, 318, 58, 140, 106, 61, 54, 133, 125, 126, 102, 105, 37, 61, 94, 106, 95, 107, 105, 44, 498, 330, 56, 482, 310, 118, 474, 150, 124, 466, 163, 134], "dau_ts_b": [72, 626, 341, 137, 586, 350, 209, 618, 485, 298, 358, 495, 365, 334, 488, 206, 579, 490, 287, 269, 591, 599, 595, 610, 626, 335, 314, 650, 631, 621, 619, 593, 328, 348, 580, 625, 224, 597, 469, 577, 588, 559, 581, 559, 346, 357, 537, 554, 556, 575, 551, 332, 342, 546, 523, 518, 491, 542, 523, 593, 342, 455, 453, 330, 341, 456, 472, 474, 457, 428, 345, 315, 444, 397, 461, 419, 429, 318, 532, 596, 336, 575, 604, 515, 552, 329, 458, 566, 352, 455], "weeks": ["W0", "W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "retention_a": [100.0, 8.3, 7.1, 7.4, 48.7, 8.9, 9.4, 7.8, 46.2, 8.9, 12.6, 12.3, 23.8], "retention_b": [100.0, 0.7, 0.8, 3.8, 66.4, 1.4, 1.5, 1.4, 71.7, 2.8, 3.0, 2.7, 30.6], "funnel_steps": ["app_open", "map_page (main)", "Click_cafe_location", "Search_function", "Click_cafe", "Click_To_go_menu", "Click_Here_menu", "Touch_categories", "click_Menu", "add_to_cart", "choose_pick_up_time", "input_order_request", "choose_payment_methods", "purchase"], "funnel_a": [24197, 24197, 14457, 6134, 20591, 15283, 3281, 18564, 18564, 17117, 15908, 15908, 15908, 12965], "funnel_b": [47754, 47754, 28423, 12117, 40540, 30002, 6489, 36491, 36491, 33597, 31232, 31232, 31232, 28373], "stage_labels": ["1. 매장선택 ➔ 장바구니", "2. 장바구니 ➔ 결제확인", "3. 결제확인 ➔ 최종구매 ★", "4. 전체 퍼널 (오픈➔구매)"], "stage_rates_a": [83.1, 92.9, 81.5, 53.6], "stage_rates_b": [82.9, 93.0, 90.8, 59.4], "brands": ["메가커피", "컴포즈커피", "빽다방", "텐퍼센트커피", "매머드커피", "개인스페셜티카페"], "brand_orders_a": [3613, 3434, 2079, 1418, 1363, 1058], "brand_orders_b": [6695, 6070, 4570, 3767, 3810, 3461], "points": {"earned_total": 2990110, "used_total": 2487000, "used_orders_cnt": 4885, "used_ratio": 17.2}};
+  const DATA = {"kpi": {"avg_dau_a": 232.7, "avg_dau_b": 461.2, "dau_lift": 98.2, "avg_sess_a": 19.4, "avg_sess_b": 38.2, "sess_lift": 97.4, "orders_per_user_a": 10.4, "orders_per_user_b": 22.7, "orders_lift": 118.8, "cross_rate_a": 17.8, "cross_rate_b": 48.3, "cross_diff": 30.4, "cvr_a": 81.5, "cvr_b": 90.8, "cvr_diff": 9.3, "orders_a": 12965, "orders_b": 28373}, "chart_dates": ["2026-01-06", "2026-01-07", "2026-01-08", "2026-02-06", "2026-02-07", "2026-02-08", "2026-03-06", "2026-03-07", "2026-03-08", "2026-04-06", "2026-04-07", "2026-04-08", "2026-05-06", "2026-05-07", "2026-05-08", "2026-06-06", "2026-06-07", "2026-06-08", "2026-06-13", "2026-06-14", "2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18", "2026-06-19", "2026-06-20", "2026-06-21", "2026-06-22", "2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26", "2026-06-27", "2026-06-28", "2026-06-29", "2026-06-30", "2026-07-06", "2026-07-07", "2026-07-08", "2026-07-13", "2026-07-14", "2026-07-15", "2026-07-16", "2026-07-17", "2026-07-18", "2026-07-19", "2026-07-20", "2026-07-21", "2026-07-22", "2026-07-23", "2026-07-24", "2026-07-25", "2026-07-26", "2026-07-27", "2026-07-28", "2026-07-29", "2026-07-30", "2026-07-31", "2026-08-06", "2026-08-07", "2026-08-08", "2026-08-13", "2026-08-14", "2026-08-15", "2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22", "2026-08-23", "2026-08-24", "2026-08-25", "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-29", "2026-09-06", "2026-09-07", "2026-09-08", "2026-10-06", "2026-10-07", "2026-10-08", "2026-11-06", "2026-11-07", "2026-11-08", "2026-12-06", "2026-12-07", "2026-12-08"], "dau_ts_a": [78, 381, 71, 152, 359, 74, 218, 359, 154, 291, 162, 154, 360, 171, 146, 206, 359, 132, 240, 240, 460, 487, 481, 468, 447, 197, 217, 468, 414, 428, 424, 423, 189, 166, 373, 364, 252, 351, 149, 319, 319, 311, 286, 283, 114, 116, 252, 252, 237, 231, 228, 102, 83, 200, 213, 187, 201, 172, 487, 318, 58, 140, 106, 61, 54, 133, 125, 126, 102, 105, 37, 61, 94, 106, 95, 107, 105, 44, 498, 330, 56, 482, 310, 118, 474, 150, 124, 466, 163, 134], "dau_ts_b": [72, 626, 341, 137, 586, 350, 209, 618, 485, 298, 358, 495, 365, 334, 488, 206, 579, 490, 287, 269, 591, 599, 595, 610, 626, 335, 314, 650, 631, 621, 619, 593, 328, 348, 580, 625, 224, 597, 469, 577, 588, 559, 581, 559, 346, 357, 537, 554, 556, 575, 551, 332, 342, 546, 523, 518, 491, 542, 523, 593, 342, 455, 453, 330, 341, 456, 472, 474, 457, 428, 345, 315, 444, 397, 461, 419, 429, 318, 532, 596, 336, 575, 604, 515, 552, 329, 458, 566, 352, 455], "weeks": ["W0", "W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "retention_a": [100.0, 8.3, 7.1, 7.4, 48.7, 8.9, 9.4, 7.8, 46.2, 8.9, 12.6, 12.3, 23.8], "retention_b": [100.0, 0.7, 0.8, 3.8, 66.4, 1.4, 1.5, 1.4, 71.7, 2.8, 3.0, 2.7, 30.6], "funnel_steps": ["app_open", "map_page (main)", "Click_cafe_location", "Search_function", "Click_cafe", "Click_To_go_menu", "Click_Here_menu", "Touch_categories", "click_Menu", "add_to_cart", "choose_pick_up_time", "input_order_request", "choose_payment_methods", "purchase"], "funnel_a": [24197, 24197, 14457, 6134, 20591, 15283, 3281, 18564, 18564, 17117, 15908, 15908, 15908, 12965], "funnel_b": [47754, 47754, 28423, 12117, 40540, 30002, 6489, 36491, 36491, 33597, 31232, 31232, 31232, 28373], "stage_labels": ["1. Store Select ➔ Cart", "2. Cart ➔ Checkout", "3. Checkout ➔ Purchase ★", "4. Full Funnel (Open ➔ Purchase)"], "stage_rates_a": [83.1, 92.9, 81.5, 53.6], "stage_rates_b": [82.9, 93.0, 90.8, 59.4], "brands": ["Mega Coffee", "Compose Coffee", "Paik's Coffee", "Ten Percent Coffee", "Mammoth Coffee", "Specialty Cafes"], "brand_orders_a": [3613, 3434, 2079, 1418, 1363, 1058], "brand_orders_b": [6695, 6070, 4570, 3767, 3810, 3461], "points": {"earned_total": 2990110, "used_total": 2487000, "used_orders_cnt": 4885, "used_ratio": 17.2}};
 
   // Tab Switching
   function switchTab(tabId) {
@@ -875,7 +875,7 @@
         labels: DATA.weeks,
         datasets: [
           {
-            label: '실험군 B (교차 통합 적립)',
+            label: 'Treatment Group B (Unified Rewards)',
             data: DATA.retention_b,
             borderColor: '#FF5C1E',
             backgroundColor: 'rgba(255, 92, 30, 0.12)',
@@ -886,7 +886,7 @@
             pointRadius: 4
           },
           {
-            label: '대조군 A (단일 매장 스탬프)',
+            label: 'Control Group A (Store-Isolated Stamps)',
             data: DATA.retention_a,
             borderColor: '#64748B',
             backgroundColor: 'transparent',
@@ -925,7 +925,7 @@
         labels: DATA.chart_dates,
         datasets: [
           {
-            label: '실험군 B (교차 적립 DAU)',
+            label: 'Treatment Group B (Unified DAU)',
             data: DATA.dau_ts_b,
             borderColor: '#FF5C1E',
             backgroundColor: 'rgba(255, 92, 30, 0.15)',
@@ -935,7 +935,7 @@
             tension: 0.2
           },
           {
-            label: '대조군 A (기존 스탬프 DAU)',
+            label: 'Control Group A (Control DAU)',
             data: DATA.dau_ts_a,
             borderColor: '#64748B',
             backgroundColor: 'rgba(100, 116, 139, 0.08)',
@@ -967,13 +967,13 @@
         labels: DATA.funnel_steps,
         datasets: [
           {
-            label: '실험군 B (통합 적립)',
+            label: 'Treatment Group B (Unified Rewards)',
             data: DATA.funnel_b,
             backgroundColor: '#FF5C1E',
             borderRadius: 5
           },
           {
-            label: '대조군 A (단일 스탬프)',
+            label: 'Control Group A (Store Stamps)',
             data: DATA.funnel_a,
             backgroundColor: '#475569',
             borderRadius: 5
@@ -1002,13 +1002,13 @@
         labels: DATA.stage_labels,
         datasets: [
           {
-            label: '실험군 B (통합적립 전환율)',
+            label: 'Treatment Group B (Unified CVR)',
             data: DATA.stage_rates_b,
             backgroundColor: '#FF5C1E',
             borderRadius: 6
           },
           {
-            label: '대조군 A (단일스탬프 전환율)',
+            label: 'Control Group A (Control CVR)',
             data: DATA.stage_rates_a,
             backgroundColor: '#475569',
             borderRadius: 6
@@ -1046,13 +1046,13 @@
         labels: DATA.brands,
         datasets: [
           {
-            label: '실험군 B 주문 건수',
+            label: 'Treatment Group B Orders',
             data: DATA.brand_orders_b,
             backgroundColor: '#FF5C1E',
             borderRadius: 6
           },
           {
-            label: '대조군 A 주문 건수',
+            label: 'Control Group A Orders',
             data: DATA.brand_orders_a,
             backgroundColor: '#475569',
             borderRadius: 6
